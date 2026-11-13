@@ -1,0 +1,10 @@
+# Large source media — kept locally, not needed to deploy the site
+video_20261112_123720.mp4
+
+# Derived reference renders (regenerable from the PDF + video)
+ref/
+
+# OS noise
+Thumbs.db
+.DS_Store
+desktop.ini

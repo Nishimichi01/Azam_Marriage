@@ -1,0 +1,24 @@
+# Netlify configuration for Walimatul Urus · Azam & Nazifa
+# Static site: nothing to build, the finished invite is index.html at the repo root.
+[build]
+  publish = "."
+  command = ""
+
+# Long cache for the fixed assets, revalidate the page itself so a new deploy
+# is picked up immediately.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
