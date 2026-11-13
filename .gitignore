@@ -8,3 +8,6 @@ ref/
 Thumbs.db
 .DS_Store
 desktop.ini
+
+# Generated deploy folder for Netlify Drop (rebuild with: rm -rf dist && mkdir -p dist/assets && cp index.html dist/ && cp assets/og.jpg dist/assets/)
+dist/

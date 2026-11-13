@@ -102,16 +102,35 @@ Use audio you have the right to use — a licensed/royalty-free track or your ow
 on the cover. Without the parameter the line simply doesn't appear. Build one link per guest
 (or per family) — it's the usual way these invitations get sent in WhatsApp groups.
 
-## 4. Publishing
+## 4. Publishing on Netlify
 
-Any static host works, because there are no server requirements:
+The repo already carries the two things Netlify needs: `index.html` at the **root**, and a
+`netlify.toml` that pins the publish directory.
 
-* **Netlify Drop** — drag the folder onto app.netlify.com/drop.
-* **Cloudflare Pages / GitHub Pages / Vercel** — drop the folder in.
-* **Any cPanel hosting** — upload `index.html` (plus `og.jpg` if you use it).
+```
+[build]
+  publish = "."
+  command = ""
+```
 
-Then enable the share preview: uncomment the two `og:image` lines in `<head>` and set your real
-domain (`https://domain.com/og.jpg`).
+If the site is linked to `github.com/Nishimichi01/Azam_Marriage`, every push to `main`
+deploys. When a deploy shows **"Page not found"**, it is almost always one of these:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Deploy succeeded, page 404s | the commit had no `index.html` (only a README) | commit/push the site files — this repo now has them |
+| No branches listed when linking | the Netlify GitHub App has no access to the repo | GitHub → Settings → Applications → Netlify → *Configure* → grant the repo, then re-link |
+| Still 404 after linking | publish directory set to `public`/`dist` in the UI | Build & deploy → Build settings → publish directory = `.` |
+
+Manual deploy, no GitHub in the loop (fastest, works even if the Git link is broken):
+
+1. Build the deploy folder: `mkdir -p dist/assets && cp index.html dist/ && cp assets/og.jpg dist/assets/`
+   (already done — `dist/` is ready and git-ignored)
+2. Open <https://app.netlify.com/drop>
+3. Drag the **`dist`** folder onto the page → you get a live URL in ~10 seconds.
+
+Either way, then enable the share preview: uncomment the two `og:image` lines in `<head>` of
+`src/index.template.html`, set your real domain, and run `python src/build.py` again.
 
 ## 5. RSVP — how it actually stores answers
 
