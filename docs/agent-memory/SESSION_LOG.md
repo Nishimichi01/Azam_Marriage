@@ -35,3 +35,20 @@ Append-only record of work sessions. Newest entries at the bottom.
 **Verification:** 390/360/320 px and 1280 px; `scrollWidth == innerWidth`; opening animation sampled frame-by-frame (seal 0→545 ms, panel insets→0 by ~1.1 s, cover fade 0.72–1.5 s, hero cascade from 470 ms); wa.me message text asserted; Lokasi scroll lands `#lokasi` at top 24; no console/page errors.
 
 **Follow-ups:** song MP3 (set `var SONG`), couple photos for a galeri section, confirm the placeholder *atur cara* times, decide WhatsApp-RSVP vs a sheet-backed form.
+
+## 2026-11-13 — Netlify &quot;Page not found&quot;: repo main had only a README, no index.html
+
+**Asked:** the Netlify site says "Page not found"; suspected a missing `main` branch.
+
+**Findings (checked with git + GitHub API, not guessed):**
+- `main` **does** exist locally and on `origin` (`refs/heads/main` = ccf1fdf) — the branch was never the problem.
+- `git show --stat ccf1fdf` → "first commit" contains **only `README.md`**. Netlify deployed a repo with no `index.html`, so every path 404s. All site files were still untracked (`git status` showed the whole folder untracked).
+- No Netlify deployment artifacts on either new commit (`/commits/<sha>/status` → `statuses: []`, `/deployments` → 0), so the repo is probably **not** linked to a working site — or the Netlify GitHub App has no access to `Nishimichi01/Azam_Marriage` (that shows up in the UI as an empty branch list, which is what the user remembered). Guessing `*.netlify.app` hostnames gave only Netlify's generic 404 page, so the site URL still has to come from the dashboard.
+
+**Changes:**
+- `netlify.toml` → `[build] publish = "."`, `command = ""`, plus cache/security headers; validated by parsing it with `tomllib`.
+- `.gitignore` → excludes `video_20261112_123720.mp4` (13 MB), `ref/` (7 MB derived renders) and the generated `dist/`.
+- Committed `a1c47d2` (invite + config) then `6cdd0b0` (README deploy section), pushed to `origin/main`; confirmed via the contents API that `index.html` now sits at the repo root.
+- Built `dist/` (index.html + assets/og.jpg, 365 KB) for an account-level drag-and-drop deploy; served it locally on :8901 and confirmed `/` returns 200 with the real `<title>`.
+
+**Verification gap:** could not see the Netlify dashboard (not signed in in the browser profile) and no deploy event exists, so the live URL is unverified — the user has to trigger the deploy.

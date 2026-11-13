@@ -132,22 +132,46 @@ Manual deploy, no GitHub in the loop (fastest, works even if the Git link is bro
 Either way, then enable the share preview: uncomment the two `og:image` lines in `<head>` of
 `src/index.template.html`, set your real domain, and run `python src/build.py` again.
 
-## 5. RSVP — how it actually stores answers
+## 5. RSVP — and getting a CSV
 
-Tapping **Hantar melalui WhatsApp** opens WhatsApp with a pre-filled message:
+The form has three modes, set at the top of the script. Default is WhatsApp; nothing else
+needs a backend, so the page stays a single static file.
 
+```js
+var RSVP_CHANNEL  = "whatsapp";   // "whatsapp" | "sheet" | "netlify"
+var RSVP_ENDPOINT = "";           // Apps Script /exec URL  (for "sheet")
+var RSVP_KEY      = "";           // shared secret          (for "sheet")
 ```
-Salam, saya *Nama* (nombor).
-Saya akan *hadir* ke Walimatul Urus Azam & Nazifa pada Sabtu, 26 Disember 2026.
-Jumlah: 3 dewasa, 2 kanak-kanak.
-Ucapan: …
-```
 
-Nothing is stored on a server — the guest still has to press send in WhatsApp. That is a
-deliberate choice for a static page: it needs no database, no login and no hosting cost, and
-every reply lands in Azam's phone. If a proper response table is wanted instead (a Google
-Sheet, attendance totals, a wishes wall), that needs a small backend (Supabase/Firebase) or a
-Google Form — both are easy to swap in later.
+| Mode | Where answers go | CSV |
+|---|---|---|
+| `whatsapp` | the guest's own WhatsApp message to Azam | ✗ (you copy them out) |
+| `sheet` | rows in a **Google Sheet**, via a free Apps Script endpoint | ✓ native |
+| `netlify` | **Netlify Forms** (100 submissions/month on the free plan) | ✓ button in the dashboard |
+
+### Recommended: Google Sheet → CSV
+
+Setup is in [`apps-script/README.md`](apps-script/README.md) — paste `apps-script/Code.gs`
+into script.google.com, deploy as a Web app, copy the `/exec` URL into `RSVP_ENDPOINT`,
+set `RSVP_CHANNEL = "sheet"`, rebuild.
+
+Then the CSV is available three ways:
+
+* **File → Download → Comma-separated values** in the spreadsheet
+* **`<exec URL>?csv=1&key=YOUR_SECRET`** — downloads a fresh CSV on demand
+* **`<exec URL>`** — a small dashboard with totals (hadir / tidak hadir / jumlah tetamu)
+
+Columns: `Masa (server), Masa (pelawat), Nama, Telefon, Status, Dewasa, Kanak-kanak,
+Jumlah tetamu, Ucapan, Dijemput, Halaman`. UTF-8 with BOM so Excel opens it cleanly.
+
+Behaviour: a repeat reply **updates** the guest's row instead of duplicating it (matched on
+phone, or name when no phone is given); a hidden honeypot field silently drops bots; after a
+successful save the guest sees a receipt with an optional "Hantar juga melalui WhatsApp".
+
+> `mode: "no-cors"` is used for the Google endpoint (a `text/plain` POST is a "simple"
+> request, so no CORS preflight), which means the page cannot read the response — the
+> confirmation is optimistic and the WhatsApp link stays as the fallback. That is the normal
+> trade-off for stateless static hosting; a real success/failure readout needs a backend.
 
 ## 6. Known gaps / decisions
 

@@ -282,6 +282,15 @@ body.sh .sheet{transform:none;visibility:visible}
 .sheet .close{position:absolute;top:12px;right:14px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
   background:rgba(255,255,255,.4);cursor:pointer;font-size:18px;line-height:1;color:var(--ink);display:grid;place-items:center}
 .sheet .note{font-size:12px;color:#6b5a3c;font-style:italic;text-align:center;margin:12px 0 0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+#f-done{text-align:center;padding:10px 0 4px}
+.tick{width:56px;height:56px;margin:6px auto 14px;border-radius:50%;background:var(--olive);
+  display:grid;place-items:center;animation:pop .5s cubic-bezier(.2,1.4,.4,1) both}
+.tick svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.done-title{font-family:var(--script);font-size:clamp(24px,6.8vw,30px);color:var(--ink);margin:0 0 6px}
+.done-sub{font-style:italic;color:var(--soft);font-size:14.5px;line-height:1.6;margin:0 auto 18px;max-width:32ch}
+#f-done .btn{width:100%;justify-content:center;margin-top:8px;padding:12px 16px}
 
 /* ---------- petals ---------- */
 .petal{position:fixed;top:-6vh;z-index:2;pointer-events:none;opacity:0;will-change:transform,opacity;
@@ -482,29 +491,58 @@ body.sh .sheet{transform:none;visibility:visible}
   <h2 id="sheet-title">RSVP &amp; Ucapan</h2>
   <p class="sub">Jawapan anda akan dihantar terus kepada Azam melalui WhatsApp.</p>
 
-  <div class="seg" role="group" aria-label="Status kehadiran">
-    <button type="button" class="sel" data-v="hadir">Hadir</button>
-    <button type="button" data-v="tidak">Tidak Hadir</button>
+  <div id="f-form">
+    <div class="seg" role="group" aria-label="Status kehadiran">
+      <button type="button" class="sel" data-v="hadir">Hadir</button>
+      <button type="button" data-v="tidak">Tidak Hadir</button>
+    </div>
+
+    <label for="f-name">Nama</label>
+    <input id="f-name" autocomplete="name" placeholder="Nama penuh anda">
+
+    <label for="f-phone">Nombor telefon</label>
+    <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Contoh: 0123456789">
+
+    <div class="two" id="f-count">
+      <div><label for="f-adult">Dewasa</label><select id="f-adult"></select></div>
+      <div><label for="f-kid">Kanak-kanak</label><select id="f-kid"></select></div>
+    </div>
+
+    <label for="f-wish">Ucapan &amp; doa (pilihan)</label>
+    <textarea id="f-wish" rows="2" placeholder="Selamat pengantin baru…"></textarea>
+
+    <!-- honeypot: bots fill this, humans never see it -->
+    <div class="hp" aria-hidden="true">
+      <label for="f-bot">Jangan isi ruang ini</label>
+      <input id="f-bot" tabindex="-1" autocomplete="off">
+    </div>
+
+    <div class="err" id="f-err" role="alert" aria-live="polite"></div>
+    <button class="btn fill go" id="f-send" type="button">Hantar melalui WhatsApp</button>
+    <p class="note" id="f-note">Tiada akaun diperlukan — pesan akan dibuka dalam WhatsApp anda.</p>
   </div>
 
-  <label for="f-name">Nama</label>
-  <input id="f-name" autocomplete="name" placeholder="Nama penuh anda">
-
-  <label for="f-phone">Nombor telefon</label>
-  <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Contoh: 0123456789">
-
-  <div class="two" id="f-count">
-    <div><label for="f-adult">Dewasa</label><select id="f-adult"></select></div>
-    <div><label for="f-kid">Kanak-kanak</label><select id="f-kid"></select></div>
+  <div id="f-done" hidden>
+    <div class="tick" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></svg>
+    </div>
+    <p class="done-title">Terima kasih, <span id="d-nama"></span>!</p>
+    <p class="done-sub" id="d-sub"></p>
+    <a class="btn" id="d-wa" target="_blank" rel="noopener" hidden>
+      <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.7 7.1L4 20l1-4.2A8 8 0 1 1 20 12Z"/></svg>
+      Hantar juga melalui WhatsApp</a>
+    <button class="btn fill" type="button" data-close>Tutup</button>
   </div>
-
-  <label for="f-wish">Ucapan &amp; doa (pilihan)</label>
-  <textarea id="f-wish" rows="2" placeholder="Selamat pengantin baru…"></textarea>
-
-  <div class="err" id="f-err" role="alert" aria-live="polite"></div>
-  <button class="btn fill go" id="f-send" type="button">Hantar melalui WhatsApp</button>
-  <p class="note">Tiada akaun diperlukan — pesan akan dibuka dalam WhatsApp anda.</p>
 </div>
+
+<!-- Netlify Forms needs this in the static HTML so the form is detected at deploy time.
+     Only used when RSVP_CHANNEL = "netlify". -->
+<form name="rsvp" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input name="bot-field">
+  <input name="nama"><input name="telefon"><input name="status">
+  <input name="dewasa"><input name="kanak-kanak"><input name="ucapan">
+  <input name="dijemput"><input name="halaman"><input name="masa">
+</form>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -520,6 +558,16 @@ body.sh .sheet{transform:none;visibility:visible}
   var WA_NUMBER   = "60175707840";            // WhatsApp Azam
   var EVENT_START = "2026-12-26T11:00:00+08:00";
   var EVENT_END   = "2026-12-26T15:00:00+08:00";
+
+  /* ---------- RSVP storage ----------
+     "whatsapp" = no storage, the guest sends the message themselves (default)
+     "sheet"    = rows are saved into a Google Sheet → export as CSV anytime
+                  (set RSVP_ENDPOINT to the Apps Script /exec URL, see apps-script/)
+     "netlify"  = rows are saved by Netlify Forms → CSV button in the Netlify UI
+                  (limited to 100 submissions/month on the free plan)          */
+  var RSVP_CHANNEL  = "whatsapp";
+  var RSVP_ENDPOINT = "";                     // e.g. https://script.google.com/macros/s/AKfy.../exec
+  var RSVP_KEY      = "";                     // must match SECRET in apps-script/Code.gs
 
   var $  = function (id) { return document.getElementById(id); };
   var B  = document.body;
@@ -715,6 +763,7 @@ body.sh .sheet{transform:none;visibility:visible}
   function sheet(open) {
     B.classList.toggle("sh", open);
     if (open) {
+      resetSheet();
       lastFocus = document.activeElement;
       window.setTimeout(function () { $("f-name").focus({ preventScroll: true }); }, 380);
     } else if (lastFocus && lastFocus.focus) {
@@ -731,6 +780,9 @@ body.sh .sheet{transform:none;visibility:visible}
   });
   $("veil").addEventListener("click", function () { sheet(false); });
   $("close-sheet").addEventListener("click", function () { sheet(false); });
+  document.querySelectorAll("[data-close]").forEach(function (b) {
+    b.addEventListener("click", function () { sheet(false); });
+  });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && B.classList.contains("sh")) sheet(false);
   });
@@ -746,37 +798,140 @@ body.sh .sheet{transform:none;visibility:visible}
     b.setAttribute("aria-pressed", b.classList.contains("sel") ? "true" : "false");
   });
 
-  $("f-send").addEventListener("click", function () {
-    var n = $("f-name").value.trim();
-    var p = $("f-phone").value.trim();
-    var u = $("f-wish").value.trim();
+  /* ---------------- RSVP submit ----------------
+     Three channels, chosen by RSVP_CHANNEL. Validation and the confirmation
+     screen are shared; only the delivery differs.                        */
 
-    if (!n) {
-      $("f-err").className = "err";
-      $("f-err").textContent = "Sila isi nama anda.";
-      $("f-name").focus();
-      return;
-    }
-    if (p && !/^[0-9+\-\s()]{7,}$/.test(p)) {
-      $("f-err").className = "err";
-      $("f-err").textContent = "Sila semak nombor telefon anda.";
-      $("f-phone").focus();
-      return;
-    }
-    $("f-err").textContent = "";
+  function collect() {
+    var params = new URLSearchParams(location.search);
+    var hadir = status === "hadir";
+    return {
+      key: RSVP_KEY,
+      nama: $("f-name").value.trim(),
+      telefon: $("f-phone").value.trim(),
+      status: status,
+      dewasa: hadir ? selA.value : "0",
+      kanak_kanak: hadir ? selK.value : "0",
+      ucapan: $("f-wish").value.trim(),
+      dijemput: (params.get("to") || params.get("kepada") || "").slice(0, 60),
+      halaman: location.href.slice(0, 300),
+      masa: new Date().toISOString(),
+      honeypot: $("f-bot").value
+    };
+  }
 
-    var msg = "Salam, saya *" + n + "*" + (p ? " (" + p + ")" : "") + ".\n";
-    msg += status === "hadir"
-      ? "Saya akan *hadir* ke Walimatul Urus Azam & Nazifa pada Sabtu, 26 Disember 2026.\nJumlah: " +
-        selA.value + " dewasa, " + selK.value + " kanak-kanak."
+  var NL = String.fromCharCode(10);          // avoids escape drift when editing this file
+
+  function message(d) {
+    var msg = "Salam, saya *" + d.nama + "*" + (d.telefon ? " (" + d.telefon + ")" : "") + "." + NL;
+    msg += d.status === "hadir"
+      ? "Saya akan *hadir* ke Walimatul Urus Azam & Nazifa pada Sabtu, 26 Disember 2026." + NL +
+        "Jumlah: " + d.dewasa + " dewasa, " + d.kanak_kanak + " kanak-kanak."
       : "Saya *tidak dapat hadir* ke Walimatul Urus Azam & Nazifa. Mohon maaf, terima kasih atas jemputan.";
-    if (u) msg += "\nUcapan: " + u;
+    if (d.ucapan) msg += NL + "Ucapan: " + d.ucapan;
+    return msg;
+  }
 
-    window.open("https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(msg), "_blank", "noopener");
-    $("f-err").className = "err ok";
-    $("f-err").textContent = "Terima kasih! Teruskan pesan dalam WhatsApp untuk menghantar.";
-    window.setTimeout(function () { sheet(false); }, 700);
+  function fail(text, focusId) {
+    $("f-err").className = "err";
+    $("f-err").textContent = text;
+    if (focusId) $(focusId).focus();
+  }
+
+  function done(d) {
+    $("d-nama").textContent = d.nama;
+    $("d-sub").textContent = d.status === "hadir"
+      ? "Kehadiran anda telah direkodkan: " + d.dewasa + " dewasa, " + d.kanak_kanak +
+        " kanak-kanak. Jumpa di Masjid Prima Saujana, insyaAllah."
+      : "Terima kasih atas khabar. Doa restu anda amat kami hargai.";
+    var wa = $("d-wa");
+    if (RSVP_CHANNEL === "whatsapp") {
+      wa.hidden = true;
+    } else {
+      wa.hidden = false;
+      wa.href = "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(message(d));
+    }
+    $("f-form").hidden = true;
+    $("f-done").hidden = false;
+    $("sheet").scrollTop = 0;
+  }
+
+  function resetSheet() {
+    $("f-form").hidden = false;
+    $("f-done").hidden = true;
+    $("f-err").textContent = "";
+  }
+
+  // Google Sheets via Apps Script: text/plain keeps it a "simple" request, so no
+  // CORS preflight; the response is opaque, hence the optimistic confirmation.
+  function sendSheet(d) {
+    if (!RSVP_ENDPOINT) { sendWhatsApp(d); return; }
+    fetch(RSVP_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(d)
+    }).then(function () { done(d); }).catch(function () {
+      // keep the guest's answer reachable even if the sheet write failed
+      done(d);
+      $("d-wa").hidden = false;
+    });
+  }
+
+  function sendNetlify(d) {
+    var body = new URLSearchParams({
+      "form-name": "rsvp",
+      nama: d.nama, telefon: d.telefon, status: d.status,
+      dewasa: d.dewasa, "kanak-kanak": d.kanak_kanak, ucapan: d.ucapan,
+      dijemput: d.dijemput, halaman: d.halaman, masa: d.masa
+    });
+    fetch("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    }).then(function (res) {
+      if (!res.ok) throw new Error("http " + res.status);
+      done(d);
+    }).catch(function () {
+      $("f-err").className = "err";
+      $("f-err").textContent = "Gagal menghantar. Sila cuba lagi.";
+    });
+  }
+
+  function sendWhatsApp(d) {
+    window.open("https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(message(d)), "_blank", "noopener");
+    done(d);
+  }
+
+  $("f-send").addEventListener("click", function () {
+    var d = collect();
+
+    if (d.honeypot) return;                       // silent drop for bots
+    if (!d.nama) return fail("Sila isi nama anda.", "f-name");
+    if (d.telefon && !/^[0-9+\-\s()]{7,}$/.test(d.telefon)) return fail("Sila semak nombor telefon anda.", "f-phone");
+
+    $("f-err").textContent = "";
+    if (RSVP_CHANNEL === "sheet") sendSheet(d);
+    else if (RSVP_CHANNEL === "netlify") sendNetlify(d);
+    else sendWhatsApp(d);
   });
+
+  // keep the copy in sync with the selected channel
+  (function () {
+    var label = "Hantar melalui WhatsApp", note = "Tiada akaun diperlukan — pesan akan dibuka dalam WhatsApp anda.";
+    if (RSVP_CHANNEL === "sheet") {
+      label = "Hantar RSVP";
+      note = "Jawapan anda disimpan dalam senarai rasmi majlis.";
+    } else if (RSVP_CHANNEL === "netlify") {
+      label = "Hantar RSVP";
+      note = "Jawapan anda terus sampai kepada tuan rumah.";
+    }
+    $("f-send").lastChild.textContent = label;
+    $("f-note").textContent = note;
+    document.querySelector(".sheet .sub").textContent = RSVP_CHANNEL === "whatsapp"
+      ? "Jawapan anda akan dihantar terus kepada Azam melalui WhatsApp."
+      : "Jawapan anda akan dihantar kepada tuan rumah majlis.";
+  })();
 
   /* ---------------- share ---------------- */
   function copyLink(url) {
