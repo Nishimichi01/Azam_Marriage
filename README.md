@@ -144,8 +144,11 @@ the form (`Nama anda`, `Mesej`, `Ucapan Anda`).
   (`<exec URL>?csv=1&key=…`, which Google serves with `Access-Control-Allow-Origin: *`).
   Only rows written through this form (`Status = Ucapan`) are shown, so a message typed into
   the RSVP form does not leak into the guestbook; wishes saved before that status existed
-  (`Hadir` with 0 guests) still appear. Newest first, up to 8 in the carousel; `lihat semua
-  ucapan` shows every one. The couple's `UJIAN…` / `DIAG…` test rows are filtered out.
+  (`Hadir` with 0 guests) still appear. The couple's `UJIAN…` / `DIAG…` test rows are filtered
+  out. **Every wish is shown, newest first, as an auto-advancing slideshow** (6.5 s each, dots
+  scroll if there are many); it pauses while a finger or cursor rests on it, while the guest is
+  typing in the form, while `lihat semua ucapan` is open, when the section is off screen, and
+  when the tab is hidden. Swiping or tapping a dot moves it and restarts the timer.
 * **Writing** — the form POSTs `{ status: "ucapan", ucapan: "<message>" }` to the same Apps
   Script endpoint, and the wish appears immediately (optimistic), then persists.
 * Wishes are **not** counted as attending guests (see §6).

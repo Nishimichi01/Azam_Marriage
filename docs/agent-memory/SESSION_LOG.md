@@ -375,3 +375,22 @@ Prototype only — `index.html` and `src/` untouched.
 - `node --check` clean; `index.html`/`dist` unchanged and in sync (the page parses by header name, so no rebuild was needed).
 
 **Client steps:** paste `Code.gs` → Save → run `resetWishes` once (or delete the tab) → `migrateWishes` if old wishes remain in `RSVP` → Deploy → New version. The old 11-column `Buku Tetamu` header cannot be written to by design.
+
+## 2026-11-27 — Guestbook wishes now auto-play as a newest-first slideshow
+
+**Asked:** the guestbook wishes should auto-advance like a slideshow through every wish, newest first, still swipeable, reading from the `Buku Tetamu` tab.
+
+**Changes** (`src/index.template.html`, page only — no Apps Script change)
+- `loadWishes()` already reads `?wishes=1` (the `Buku Tetamu` feed) and `parseWishes()` reverses the append order, so the show starts at the newest wish.
+- New slideshow: `SLIDE_MS = 6500`, `startSlides()`/`stopSlides()`, `slideBusy` latch so crossfades never overlap; `gotoWish(i, auto)` only restarts the countdown on manual moves.
+- Dots: one per wish (the old `MAX_SLIDES = 8` cap is gone), in a horizontally scrollable row with `scrollbar-width:none`, auto-centred on the active dot by `centreDot()` (sets `scrollLeft`, so the page never jumps).
+- Pauses: pointer over the carousel (`pointerenter`/`pointerleave`, replacing a `:hover` check that stuck on touch), focus inside `#gb-form`, the all-wishes overlay open, section off screen (IntersectionObserver, threshold .25), tab hidden, and `prefers-reduced-motion` (no autoplay at all).
+- Signing a wish restarts the show from the new first slide.
+
+**Verification** (against the mock with 5 real wishes + 1 UJIAN row)
+- 5 dots rendered, UJIAN filtered; order observed newest→oldest by timestamp (Hakim 16:36 → Legacy 16:32 → Fatimah 16:28).
+- Advanced automatically at ~6.5 s intervals (three successive different wishes sampled 7 s apart).
+- Hovered the carousel for 7.5 s → stayed on the same wish; moved off → advanced, so pause/resume work.
+- `node --check` clean; `index.html`/`dist` in sync (470 KB).
+
+**Note:** backend untouched — the client already has the split working; only the site needs republishing.

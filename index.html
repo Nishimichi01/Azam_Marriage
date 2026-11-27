@@ -458,7 +458,14 @@ section{position:relative;padding:22px 0}
 }
 .wishes.swap .wmsg,.wishes.swap .wname{opacity:0;transform:translateY(5px)}
 .wishes .empty{font-family:var(--serif);font-size:14px;font-style:italic;color:var(--muted);line-height:1.6}
-.dots{display:flex;justify-content:center;gap:7px;margin-top:16px;min-height:10px}
+.dots{
+  display:flex;flex-wrap:nowrap;justify-content:center;gap:7px;
+  margin-top:16px;min-height:10px;overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;scroll-behavior:smooth;
+  padding:2px 0;
+}
+.dots::-webkit-scrollbar{display:none}
+.dots button{flex:none}
 .dots button{
   width:7px;height:7px;padding:0;border-radius:50%;border:0;cursor:pointer;
   background:rgba(120,93,65,.26);transition:background .2s,transform .2s;
@@ -1045,6 +1052,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
   })();
 
   var $ = function (id) { return document.getElementById(id); };
+  var wishesEl = $("wishes");
   var B = document.body;
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var params = new URLSearchParams(window.location.search);
@@ -1276,7 +1284,8 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
      GUESTBOOK — wishes live in the RSVP sheet's "Ucapan" column
      ============================================================ */
   var wishes = [], wi = 0, gbLoading = false, gbDone = false, gbBusy = false;
-  var MAX_SLIDES = 8;
+  var SLIDE_MS = 6500;                   // how long each wish stays on screen
+  var slideTimer = null, slideBusy = false, slideInView = false, slidePaused = false;
 
   function csvRows(text) {
     text = String(text).replace(/^\uFEFF/, "");
@@ -1335,8 +1344,44 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
       .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.text(); })
       .then(function (txt) { wishes = parseWishes(txt); gbDone = true; })
       .catch(function () { /* offline / cold start: keep the empty state */ })
-      .then(function () { gbLoading = false; renderWishes(); });
+      .then(function () { gbLoading = false; renderWishes(); startSlides(); });
   }
+
+  /* ---------- slideshow: every wish, newest first, one after another ---------- */
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      slideInView = entries[0].isIntersecting;
+    }, { threshold: 0.25 }).observe(wishesEl);
+  } else {
+    slideInView = true;
+  }
+
+  function startSlides() {
+    stopSlides();
+    if (reduce || wishes.length < 2) return;
+    slideTimer = window.setInterval(function () {
+      // never advance while the guest is reading the full list, typing, hovering
+      // the carousel, or when the tab/section is off screen
+      if (slideBusy || document.hidden || !slideInView) return;
+      if (gall && gall.classList.contains("on")) return;
+      var a = document.activeElement;
+      if (a && a.closest && a.closest("#gb-form")) return;
+      if (slidePaused) return;
+      gotoWish(wi + 1, true);
+    }, SLIDE_MS);
+  }
+
+  function stopSlides() {
+    if (slideTimer) window.clearInterval(slideTimer);
+    slideTimer = null;
+  }
+
+  // pause while a finger/mouse rests on the carousel, resume on the way out
+  wishesEl.addEventListener("pointerenter", function () { slidePaused = true; });
+  wishesEl.addEventListener("pointerleave", function () {
+    slidePaused = false;
+    startSlides();
+  });
 
   function renderWishes() {
     var msg = $("w-msg"), nm = $("w-name"), dots = $("w-dots"), all = $("w-all");
@@ -1356,7 +1401,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     nm.hidden = false;
     nm.textContent = wishes[wi].n;
 
-    var n = Math.min(wishes.length, MAX_SLIDES);
+    var n = wishes.length;                 // every wish gets a dot (the row scrolls)
     for (var i = 0; i < n; i++) {
       (function (idx) {
         var b = document.createElement("button");
@@ -1369,17 +1414,28 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
       })(i);
     }
     all.hidden = wishes.length < 2;
+    centreDot();
   }
 
-  function gotoWish(i) {
-    if (!wishes.length) return;
+  // keep the active dot visible without moving the page itself
+  function centreDot() {
+    var dots = $("w-dots"), active = dots.querySelector('[aria-current="true"]');
+    if (!active || dots.scrollWidth <= dots.clientWidth) return;
+    dots.scrollLeft = active.offsetLeft - (dots.clientWidth - active.offsetWidth) / 2;
+  }
+
+  function gotoWish(i, auto) {
+    if (!wishes.length || slideBusy) return;
+    slideBusy = true;
     var box = $("wishes");
     box.classList.add("swap");
     window.setTimeout(function () {
       wi = (i + wishes.length) % wishes.length;
       renderWishes();
       box.classList.remove("swap");
-    }, reduce ? 0 : 220);
+      slideBusy = false;
+      if (!auto) startSlides();          // a manual move restarts the countdown
+    }, reduce ? 0 : 260);
   }
 
   // swipe left / right
@@ -1476,6 +1532,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
       wishes.unshift(entry);
       wi = 0;
       renderWishes();
+      startSlides();
       gbErr("Terima kasih! Ucapan anda telah disimpan.", true);
       toast("Ucapan anda telah dihantar.");
     }
