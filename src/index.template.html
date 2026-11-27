@@ -44,7 +44,6 @@
   --amp:"Daydream",Georgia,serif;                    /* the cover's ampersand         */
   --hand:"Brittany Signature","MoonTime",cursive;    /* "dengan pasangannya"          */
   --wish:"La Belle Aurore",cursive;                  /* guestbook wishes              */
-  --mono:"Kaushan Script","MoonTime",cursive;         /* cover monogram (signature)    */
   --pad:clamp(19px,6vw,30px);
   --flourish:url("{{FLOURISH}}");
   --petal:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='.6' y2='1'%3E%3Cstop offset='0' stop-color='%23DCC1A6'/%3E%3Cstop offset='.55' stop-color='%23B08B6B'/%3E%3Cstop offset='1' stop-color='%238C6A4E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M12 1c7 6 10 15 0 30C2 16 5 7 12 1Z' fill='url(%23g)'/%3E%3Cpath d='M12 5v24' stroke='%239C7857' stroke-width='.7' opacity='.5'/%3E%3C/svg%3E");
@@ -138,18 +137,16 @@ ul{padding:0;list-style:none}
   letter-spacing:.28em;text-transform:uppercase;color:var(--brown);text-indent:.28em;
 }
 .mono{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:var(--mono);color:var(--brown);
-  font-size:clamp(80px,27vw,106px);line-height:.7;
-  padding:1% 0 4%;margin-bottom:3.2%;transform:translateY(-.02em);
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:1% 0 3%;margin-bottom:3%;
 }
-/* the signature monogram of the reference image: stacked, leaning, hand-set */
-.mono .i{display:block;transform:translateX(-.591em) rotate(-6deg)}
-.mono .amp{
-  display:block;font-family:var(--mono);font-size:.82em;line-height:1;
-  transform:translateX(-.179em);
+/* The monogram is the client's own artwork (Reference/Signature front page
+   reference.png), traced to an alpha mask and painted in the card's brown —
+   no typeface can reproduce a hand-drawn signature, so the ink itself ships. */
+.mono img{
+  display:block;height:clamp(168px,26vh,232px);width:auto;
+  aspect-ratio:379 / 705;
 }
-.mono .a{display:block;font-size:1.08em;transform:translateX(.149em) rotate(2deg)}
 .c-foot{width:100%}
 .c-date{
   font-family:var(--date);font-size:clamp(13px,3.6vw,15px);letter-spacing:.13em;
@@ -176,7 +173,7 @@ ul{padding:0;list-style:none}
 }
 /* the only "tap me" affordance left: a slow, quiet breath */
 @media (prefers-reduced-motion:no-preference){
-  .mono{animation:monoIn 1.6s cubic-bezier(.2,.8,.2,1) both}
+  .mono img{animation:monoIn 1.6s cubic-bezier(.2,.8,.2,1) both}
   @keyframes monoIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
   .c-date,.c-venue,.kepada{animation:coverIn .9s ease .35s both}
   @keyframes coverIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -676,8 +673,8 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     <div class="cpanel">
       <div class="cface">
         <p class="c-caps">Menuju Satu</p>
-        <div class="mono" aria-label="Imas dan Azam">
-          <span class="i">I</span><span class="amp" aria-hidden="true">&amp;</span><span class="a">A</span>
+        <div class="mono">
+          <img src="{{MONOGRAM}}" width="379" height="705" alt="Imas dan Azam">
         </div>
         <div class="c-foot">
           <p class="c-date">SABTU<i aria-hidden="true"></i>26.12.2026</p>

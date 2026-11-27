@@ -23,6 +23,19 @@ apps-script/                ← the Google Sheet endpoint for RSVP + guestbook
 docs/agent-memory/          ← notes for future work sessions
 ```
 
+### 1a. The signature monogram
+
+No typeface can reproduce a hand-drawn signature, so the artwork itself ships:
+
+1. `Reference/Signature front page reference.png` (brown ink on flat cream) is converted to an
+   **alpha mask** — `alpha = (bg − pixel) / (bg − ink)` per pixel, so the anti-aliased brush edges
+   survive — then cropped to the ink and painted in the card's brown `#785D41`.
+2. The result is `assets/monogram.webp` (379 × 705, 7 KB), inlined by `src/build.py` and shown at
+   `height: clamp(168px, 26vh, 232px)` on the cover.
+
+To swap it, replace that PNG with another signature on a flat background and re-run the trace
+(the script is `work/trace_monogram.py`), or just drop a transparent PNG in its place.
+
 Rebuild after editing the template:
 
 ```bash
@@ -63,8 +76,8 @@ below is in `ref/refcard/DESIGN-SPEC.md`.
 **The brief asked for a phone-first adaptation, not a reproduction.** Three departures from
 the print, all deliberate:
 
-1. **The cover shows initials only** — a large signature monogram (**Kaushan Script**,
-   stacked and leaning like `Reference/Signature front page reference.png`), plus
+1. **The cover shows initials only** — the couple's own **hand-drawn signature monogram**,
+   taken from `Reference/Signature front page reference.png` (see §1a), plus
    `MENUJU SATU · SABTU | 26.12.2026 · venue`; no tap hint, no full names.
 2. **The interior keeps the card's order but not its layout.** Each couple name is one bold
    two-line block (`Imas Nazifatuz Zahro / Binti Suhaimi`); the three-column
@@ -80,7 +93,7 @@ secondary typeface — and the guestbook messages use La Belle Aurore.
 
 ## 2. What the invitation does
 
-* **Cover — initials only.** A large Kaushan Script monogram on the scalloped panel. Tap/Enter: the
+* **Cover — initials only.** The couple's hand-drawn `I & A` signature on the scalloped panel. Tap/Enter: the
   panel turns away like a book page (`rotateY`, 1.9 s, hinged on its left edge with a light
   sweep) while dried-petal leaves drift down and the invitation settles in behind it. Nothing
   behind the cover is pre-revealed, and reduced motion skips straight to the open state.

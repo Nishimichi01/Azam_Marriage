@@ -302,3 +302,22 @@ Prototype only — `index.html` and `src/` untouched.
 **Subagents:** both completed this time — `sig-font` (font ranking + final geometry, 24 faces tested) and `cal-link` (URL contract). Their notes are in `work/notes/`.
 
 **Follow-ups:** the earlier Code.gs redeploy is still outstanding; if the client prefers the reference's slab `I`, it would need a licensed face (designer file), not a Google font.
+
+## 2026-11-27 — Cover monogram is now the client's traced signature artwork, not a font
+
+**Asked:** use the *exact* font style of `Reference/Signature front page reference.png` for the cover `I & A` (the Kaushan Script lookalike was not close enough).
+
+**Decision:** no typeface can reproduce a hand-drawn signature exactly, so the **artwork itself now ships**. The reference PNG is flat two-tone (ink `#795C45`, paper `#F6F4F2`), which makes a clean alpha trace possible.
+
+**Changes**
+- `work/trace_monogram.py` — `alpha = (bg − pixel)/(bg − ink)` per pixel (keeps the anti-aliased brush edges), grain threshold at .08, crop to the ink + 6 px, paint `#785D41`, export `assets/monogram.webp` (379×705, **7 KB**, transparent).
+- `src/build.py` — inlines `{{MONOGRAM}}`; the Kaushan Script face and the `--mono` custom property are gone.
+- `src/index.template.html` — `.mono` is now `<img>` at `height: clamp(168px, 26vh, 232px)`, `aspect-ratio: 379/705`, centred in the flexible middle band of the cover; entrance animation moved to the image.
+- `assets/og.jpg` regenerated with the traced signature; docs (README §1a + documentary) updated to say the monogram is the client's artwork and how to re-trace it.
+
+**Verification**
+- Browser: `img.complete`, `naturalWidth 379`, rendered 118×219 at 390 (gap to the date line 29 px), no page errors, `scrollWidth 375 ≤ 390`; 320 px checked; `cover` hides at 2.45 s; petals 9; names still `700/19.11px`.
+- `assets/monogram.webp` is byte-reproducible from `work/trace_monogram.py` (cmp identical).
+- `index.html` 476 KB (down from 510 KB — the font is no longer inlined) and byte-identical to `dist/`.
+
+**Note:** the earlier subagent font match (Kaushan Script) was a dead end and has been removed; both the reference's slab `I` and its leaning composition only survive if the drawing itself is used.

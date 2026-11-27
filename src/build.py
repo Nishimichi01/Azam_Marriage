@@ -8,6 +8,8 @@ index.html needs no network at all (fonts included):
 
     {{CARD_TILE}}    assets/card-tile-500.webp  the print's botanical toile cell (tiles seamlessly)
     {{PANEL_MASK}}   assets/panel-scallop.svg   scalloped card silhouette (CSS mask)
+    {{MONOGRAM}}     assets/monogram.webp       the signature monogram, traced from the
+                                                client's reference PNG (alpha only)
     {{FLOURISH}}     assets/flourish.svg        ornamental divider
     {{FONTS}}        @font-face block           card subsets + Vollkorn + La Belle Aurore
 """
@@ -38,7 +40,6 @@ GOOGLE_FONTS = [
     ("Vollkorn", "google/Vollkorn-400.sub.woff2", "400 900", "normal"),
     ("Vollkorn", "google/Vollkorn-400i.sub.woff2", "400 900", "italic"),
     ("La Belle Aurore", "google/LaBelleAurore-400.sub.woff2", 400, "normal"),
-    ("Kaushan Script", "google/KaushanScript-400.sub.woff2", 400, "normal"),
 ]
 
 
@@ -63,6 +64,7 @@ def main() -> int:
     tokens = {
         "{{CARD_TILE}}": data_uri(ROOT / "assets" / "card-tile-500.webp", "image/webp"),
         "{{PANEL_MASK}}": data_uri(ROOT / "assets" / "panel-scallop.svg", "image/svg+xml"),
+        "{{MONOGRAM}}": data_uri(ROOT / "assets" / "monogram.webp", "image/webp"),
         "{{FLOURISH}}": data_uri(ROOT / "assets" / "flourish.svg", "image/svg+xml"),
     }
     for token, uri in tokens.items():

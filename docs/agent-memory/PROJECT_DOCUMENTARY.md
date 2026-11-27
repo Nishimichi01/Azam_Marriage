@@ -40,7 +40,7 @@ no font/image network dependency at all.
 | `--muted` | `#8B735A` | eyebrows, notes |
 | `--card` | TheSeasons (Reg 400 / Bd-p2 700 / BdIt 700i) | the card's serif |
 | `--script` | MoonTime | signature only (`Imas & Azam` — it carries just `A I a m s z`) |
-| `--mono` | Kaushan Script | the cover monogram (`I & A`, stacked + leaning, 80–106 px) |
+| monogram | client artwork | `assets/monogram.webp` — the signature traced from `Reference/Signature front page reference.png`, painted `#785D41`, shown at `height: clamp(168px,26vh,232px)` |
 | `--amp` | Daydream | the `&` |
 | `--hand` | Brittany Signature | "dengan pasangannya" |
 | `--serif` | Vollkorn | all new copy (the card's secondary face) |
@@ -54,10 +54,12 @@ Cover rule: **initials only** (`MENUJU SATU`, `I & A`, `SABTU | 26.12.2026`, ven
 optional `KEPADA` line). No tap hint — the client had it removed; the monogram itself is the
 affordance. Do not put the full names back on the cover.
 
-Monogram: Kaushan Script, stacked `I` / `&` / `A` with per-glyph offsets
-(`I` -0.591em/-6°, `&` 0.82em/-0.179em, `A` 1.08em/+0.149em/+2°) copied from
-`Reference/Signature front page reference.png`; the ink needs ~3.2% bottom margin or it
-touches the date line.
+Monogram: **the client's own artwork**, not a font. The PNG is flat two-tone, so it is traced to
+alpha with `alpha = (bg − pixel)/(bg − ink)` (bg `#F6F4F2`, ink `#795C45`), thresholded at .08,
+cropped to the ink, tinted `#785D41` and exported as a 379×705 WebP (7 KB) that `build.py`
+inlines. Substituting a lookalike font (Allura, Kaushan Script, Great Vibes…) was rejected: none
+reproduced the slab `I` and the leaning composition. Keep the trace script
+(`work/trace_monogram.py`) if the artwork changes.
 
 Calendar: only `calendar/render?action=TEMPLATE` with **UTC** `dates`
 (`20261226T030000Z/20261226T080000Z`) + `ctz` reliably opens a prefilled, save-ready event;
