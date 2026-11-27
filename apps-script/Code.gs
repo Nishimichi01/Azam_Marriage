@@ -5,16 +5,14 @@
 //   POST  { key, nama, telefon, status, dewasa, kanak_kanak, ucapan, ... }
 //         status "hadir" / "tidak"  -> an RSVP row
 //         status "ucapan"           -> a guestbook wish (never a guest)
-//   GET                          -> dashboard: totals + CSV link
-//   GET  ?csv=1&key=SECRET       -> the whole sheet as CSV
+//   GET                          -> dashboard: totals + CSV links
+//   GET  ?csv=1&key=SECRET       -> the RSVP tab as CSV
+//   GET  ?wishes=1&key=SECRET    -> the Buku Tetamu tab as CSV (the page reads this)
 //
-// RSVP replies are appended to the "RSVP" tab; guestbook wishes to the
-// "Buku Tetamu" tab. Both live in the spreadsheet whose id sits in the
-// SPREADSHEET_ID script property (a configured id wins; otherwise a bound
-// script uses the sheet it lives in).
-//
-//   GET  ?csv=1&key=SECRET      -> RSVP tab as CSV
-//   GET  ?wishes=1&key=SECRET   -> Buku Tetamu tab as CSV (the page reads this)
+// RSVP replies are appended to the "RSVP" tab (11 columns); guestbook wishes to
+// the "Buku Tetamu" tab (Masa | Nama | Ucapan | Dijemput). Both live in the
+// spreadsheet whose id sits in the SPREADSHEET_ID script property (a configured
+// id wins; otherwise a bound script uses the sheet it lives in).
 //
 // To publish a change: paste this file, Save, then
 // Deploy > Manage deployments > pencil > Version: New version > Deploy.
@@ -39,6 +37,9 @@ var HEADERS = [
   'Masa (server)', 'Masa (pelawat)', 'Nama', 'Telefon', 'Status',
   'Dewasa', 'Kanak-kanak', 'Jumlah tetamu', 'Ucapan', 'Dijemput', 'Halaman'
 ];
+
+// The guestbook tab is its own table: a wish has no phone, no status and no pax.
+var WISH_HEADERS = ['Masa', 'Nama', 'Ucapan', 'Dijemput'];
 
 // ---------------------------------------------------------------- POST
 
@@ -84,12 +85,23 @@ function doPost(e) {
 
     var book  = book_();
     var sheet = isWish ? wishSheet_(book.ss) : book.sh;
+
+    if (isWish) {
+      sheet.appendRow([
+        new Date(),
+        nama,
+        String(body.ucapan || '').slice(0, 1000),
+        String(body.dijemput || '').slice(0, 120)
+      ]);
+      return json_({ ok: true, updated: false, row: sheet.getLastRow() });
+    }
+
     var row = [
       new Date(),
       date_(body.masa),
       nama,
       phone,
-      isWish ? 'Ucapan' : (hadir ? 'Hadir' : 'Tidak Hadir'),
+      hadir ? 'Hadir' : 'Tidak Hadir',
       dewasa,
       kanak,
       dewasa + kanak,
@@ -98,7 +110,7 @@ function doPost(e) {
       String(body.halaman || '').slice(0, 300)
     ];
 
-    var hit = isWish ? 0 : find_(sheet, nama, phone);
+    var hit = find_(sheet, nama, phone);
     if (hit) {
       sheet.getRange(hit, 1, 1, row.length).setValues([row]);
       sheet.getRange(hit, 1).setNote('Dikemas kini pada ' + stamped_());
@@ -135,9 +147,12 @@ function doGet(e) {
     if (r[4] === 'Hadir') { hadir++; orang += num_(r[5], 0); kanak += num_(r[6], 0); }
     else if (r[4]) { tidak++; }
   });
-  var wishRows = wishSheet_(book.ss).getDataRange().getValues().slice(1)
-    .filter(function (r) { return String(r[8] || '').trim(); });
-  var ucapan = wishRows.length;
+  var wishValues = wishSheet_(book.ss).getDataRange().getValues();
+  var wishHead = (wishValues[0] || []).map(function (h) { return String(h).trim().toLowerCase(); });
+  var iMsg = wishHead.indexOf('ucapan');
+  var ucapan = wishValues.slice(1).filter(function (r) {
+    return String(r[iMsg < 0 ? 2 : iMsg] || '').trim();
+  }).length;
 
   var link = ScriptApp.getService().getUrl() + '?csv=1&key=' + encodeURIComponent(SECRET);
   return HtmlService.createHtmlOutput(
@@ -190,7 +205,7 @@ function book_() {
     props.setProperty('SPREADSHEET_ID', ss.getId());
   }
 
-  var sh = ensure_(ss, SHEET_NAME);
+  var sh = ensure_(ss, SHEET_NAME, HEADERS);
 
   // Phones must stay text: Sheets parses "0123456789" as a number and drops the
   // leading zero, which silently corrupts every Malaysian number on export.
@@ -204,11 +219,12 @@ function book_() {
 }
 
 function wishSheet_(ss) {
-  return ensure_(ss, WISH_SHEET);
+  return ensure_(ss, WISH_SHEET, WISH_HEADERS);
 }
 
 // Creates the tab (and its header row) the first time it is needed.
-function ensure_(ss, name) {
+function ensure_(ss, name, headers) {
+  headers = headers || HEADERS;
   var sh = ss.getSheetByName(name);
   if (!sh) sh = ss.insertSheet(name);
 
@@ -226,14 +242,31 @@ function ensure_(ss, name) {
   }
 
   if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS);
-    sh.getRange(1, 1, 1, HEADERS.length)
-      .setFontWeight('bold').setBackground('#78804b').setFontColor('#ffffff');
-    sh.setFrozenRows(1);
-    sh.setColumnWidths(1, HEADERS.length, 150);
-    sh.setColumnWidth(9, 320);
+    writeHeader_(sh, headers);
+    return sh;
+  }
+
+  // An existing tab with a different header row would take rows in the wrong
+  // columns, so stop and say what to do instead of corrupting the sheet.
+  var have = sh.getRange(1, 1, 1, Math.max(headers.length, sh.getMaxColumns()))
+    .getValues()[0].map(function (v) { return String(v).trim(); });
+  var matches = headers.every(function (h, i) { return have[i] === h; });
+  if (!matches) {
+    throw new Error('The tab "' + name + '" has different columns (' +
+                    have.slice(0, headers.length).join(' | ') + '). Expected: ' +
+                    headers.join(' | ') + '. Run resetWishes() once, or delete that tab, ' +
+                    'so it can be recreated with the right columns.');
   }
   return sh;
+}
+
+function writeHeader_(sh, headers) {
+  sh.appendRow(headers);
+  sh.getRange(1, 1, 1, headers.length)
+    .setFontWeight('bold').setBackground('#78804b').setFontColor('#ffffff');
+  sh.setFrozenRows(1);
+  sh.setColumnWidths(1, headers.length, 150);
+  sh.setColumnWidth(headers[2] === 'Ucapan' ? 3 : 9, 320);
 }
 
 function sheetText_(sh, column) {
@@ -317,11 +350,25 @@ function migrateWishes() {
   var moved = 0;
   for (var i = values.length - 1; i >= 1; i--) {          // bottom-up, so indexes stay valid
     if (values[i][4] !== 'Ucapan') continue;
-    dst.appendRow(values[i]);
+    dst.appendRow([values[i][0], values[i][2], values[i][8], values[i][9]]);
     src.deleteRow(i + 1);
     moved++;
   }
   Logger.log('Moved ' + moved + ' wish row(s) to "' + WISH_SHEET + '".');
+}
+
+// One-off repair: recreate the guestbook tab with its own columns. The rows in it
+// are cleared, because the old layout cannot be trusted to map across.
+function resetWishes() {
+  var ss = book_().ss;
+  var sh = ss.getSheetByName(WISH_SHEET);
+  if (sh) {
+    sh.clear({ contents: true });
+  } else {
+    sh = ss.insertSheet(WISH_SHEET);
+  }
+  writeHeader_(sh, WISH_HEADERS);
+  Logger.log('"' + WISH_SHEET + '" reset with columns: ' + WISH_HEADERS.join(' | '));
 }
 
 // Optional: run this once from the editor to create the sheet + headers early.

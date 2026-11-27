@@ -259,17 +259,22 @@ Ucapan, Dijemput, Halaman` — UTF-8 with BOM so Excel opens it cleanly.
 
 **Two tabs, one endpoint:**
 
-| Tab | Holds | Served as |
-|---|---|---|
-| `RSVP` | RSVP replies (`Hadir` / `Tidak Hadir`) | `<exec>?csv=1&key=…` |
-| `Buku Tetamu` | guestbook wishes only (`Ucapan`) | `<exec>?wishes=1&key=…` (the page reads this) |
+| Tab | Columns | Holds | Served as |
+|---|---|---|---|
+| `RSVP` | `Masa (server) … Halaman` (11) | RSVP replies (`Hadir` / `Tidak Hadir`) | `<exec>?csv=1&key=…` |
+| `Buku Tetamu` | `Masa │ Nama │ Ucapan │ Dijemput` (4) | guestbook wishes only | `<exec>?wishes=1&key=…` (the page reads this) |
 
 Both tabs are created with their header row on first use. `Buku Tetamu` must be a **plain
 tab** — the script refuses to write into it if A1 holds a formula (e.g. a `=QUERY` view),
 because the rows would land under the view.
 
 Moving old data: run `migrateWishes` once from the Apps Script editor — it copies every
-`Status = Ucapan` row out of `RSVP` into `Buku Tetamu` and deletes it from `RSVP`.
+`Status = Ucapan` row out of `RSVP` into `Buku Tetamu` (in the 4-column shape) and deletes it
+from `RSVP`.
+
+If the `Buku Tetamu` tab still has the old 11-column header, run `resetWishes` once: it clears
+that tab and writes the four wish columns. The script refuses to write into a tab whose header
+does not match, rather than dropping values into the wrong columns.
 
 **Guestbook rows** go to the `Buku Tetamu` tab with `Status = Ucapan`, `Telefon` blank and
 0 guests, so they never disturb the attendance totals. They are appended, never merged into an

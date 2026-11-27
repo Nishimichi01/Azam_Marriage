@@ -18,9 +18,12 @@ Muddin bin Ishak**, Saturday 26 December 2026, Masjid Prima Saujana, Kajang.
 
 ## Architecture
 
-Two tabs, one web app: `RSVP` holds attendance rows, `Buku Tetamu` holds wishes; the page reads
-`?wishes=1` for the guestbook and the dashboard counts both. `ensure_()` creates a tab with its
-header row and refuses a tab whose A1 is a formula. `migrateWishes()` moves pre-split wishes.
+Two tabs, one web app: `RSVP` (11 columns) holds attendance rows, `Buku Tetamu`
+(`Masa | Nama | Ucapan | Dijemput`) holds wishes; the page reads `?wishes=1` and parses by
+header name, so the wish tab never needs RSVP columns. `ensure_(ss, name, headers)` writes the
+header when the tab is empty, refuses a tab whose A1 is a formula, and **throws when the header
+row does not match** (otherwise values land in the wrong columns). `resetWishes()` rebuilds the
+guestbook tab in the 4-column shape; `migrateWishes()` moves pre-split wishes out of `RSVP`.
 
 ```
 src/index.template.html  HTML + CSS + one IIFE of vanilla JS. No framework, no runtime deps.

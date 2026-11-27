@@ -358,3 +358,20 @@ Prototype only — `index.html` and `src/` untouched.
 - `node --check` clean; `dist/` byte-identical.
 
 **Follow-ups for the client:** clear the `=QUERY` formula out of `Buku Tetamu` before deploying (otherwise the new guard refuses to write), paste `Code.gs`, New version deploy, run `migrateWishes`, then publish the new `index.html`.
+
+## 2026-11-27 — Guestbook tab now has its own four columns, with a header guard and reset helper
+
+**Asked:** the `RSVP` and `Buku Tetamu` tabs had identical 11-column layouts; the guestbook tab should have its own, wish-shaped columns.
+
+**Changes**
+- `apps-script/Code.gs`: `WISH_HEADERS = ['Masa','Nama','Ucapan','Dijemput']`; the wish branch of `doPost` appends a 4-value row (date, name, message, invited-as) and returns before the RSVP row builder; `ensure_(ss, name, headers)` takes the header set, writes it on an empty tab, refuses a tab whose A1 is a formula, and **throws on a header mismatch** instead of writing into wrong columns; `writeHeader_()` sizes column 3 (Ucapan) wide.
+- Dashboard wish count now reads the `Ucapan` column by header name on the wish tab (not `r[8]`).
+- `migrateWishes()` appends legacy wishes as `[masa, nama, ucapan, dijemput]`.
+- New `resetWishes()`: clears the guestbook tab and writes the 4-column header (for tabs created by the previous layout).
+- Tests: 69 pass (wish row shape, wish header, mismatch guard, `resetWishes`, migration into the new shape).
+
+**Verification**
+- Page against a 4-column `?wishes=1` mock: 2 wishes shown, `UJIAN` row filtered, carousel + all-wishes overlay correct.
+- `node --check` clean; `index.html`/`dist` unchanged and in sync (the page parses by header name, so no rebuild was needed).
+
+**Client steps:** paste `Code.gs` → Save → run `resetWishes` once (or delete the tab) → `migrateWishes` if old wishes remain in `RSVP` → Deploy → New version. The old 11-column `Buku Tetamu` header cannot be written to by design.

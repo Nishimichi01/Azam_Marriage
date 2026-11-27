@@ -66,6 +66,7 @@ function makeSheet(name) {
     }),
     getDataRange: () => ({ getValues: () => rows.map((r) => r.slice()) }),
     deleteRow: (n) => { rows.splice(n - 1, 1); },
+    clear: () => { rows.length = 0; },
     setFormula: (r, c, v) => { sheet._formula = { r, c, v }; },
     setFrozenRows: () => {},
     setColumnWidth: () => {},
@@ -342,11 +343,14 @@ check('wish does NOT touch the RSVP tab', sh.getLastRow() === rsvpBefore,
       'rows ' + rsvpBefore + ' -> ' + sh.getLastRow());
 check('wish is written to "Buku Tetamu"', wishSh.getLastRow() === 2, wishSh.getLastRow());
 
+const wishHead = wishSh._rows[0];
+check('the guestbook tab has its own columns',
+      wishHead.join('|') === 'Masa|Nama|Ucapan|Dijemput', wishHead.join('|'));
 const wishRow = wishSh._rows[1];
-check('stored with status Ucapan', wishRow[4] === 'Ucapan', wishRow[4]);
-check('wish row carries no guests', wishRow[5] === 0 && wishRow[7] === 0, wishRow[5] + '/' + wishRow[7]);
-check('marker phone is blanked', wishRow[3] === '', JSON.stringify(wishRow[3]));
-check('wish text stored', wishRow[8] === 'Semoga bahagia hingga ke jannah!', wishRow[8]);
+check('wish row is wish-shaped (4 columns, no phone/status/pax)',
+      wishRow.length === 4, JSON.stringify(wishRow));
+check('wish row stores the name', wishRow[1] === 'Nurul Aisyah', wishRow[1]);
+check('wish row stores the message', wishRow[2] === 'Semoga bahagia hingga ke jannah!', wishRow[2]);
 
 const gb2 = post({ key: SECRET, nama: 'Nurul Aisyah', telefon: '0000000000', status: 'ucapan',
                    ucapan: 'Second wish from the same guest' });
@@ -361,8 +365,9 @@ check('?wishes=1 serves the wishes tab', wishCsv.indexOf('Second wish from the s
 check('?csv=1 does not leak wishes', rsvpCsv.indexOf('Second wish from the same guest') === -1);
 check('?wishes=1 is refused without the key',
       ctx.doGet({ parameter: { wishes: '1', key: 'wrong' } }).getContent() === 'Unauthorized');
-check('wishes CSV carries the same header row',
-      wishCsv.split(CR + LF)[0].indexOf('Nama,Telefon,Status') > -1);
+check('wishes CSV carries the wish header row',
+      wishCsv.split(CR + LF)[0].indexOf('Masa,Nama,Ucapan,Dijemput') > -1,
+      wishCsv.split(CR + LF)[0]);
 
 console.log('');
 console.log('dashboard separates wishes from attendance');
@@ -390,6 +395,15 @@ check('explains the formula problem', String(guarded).indexOf('has a formula in 
 viewTab.setFormula(1, 1, '');
 
 console.log('');
+console.log('a guestbook tab with RSVP columns is refused, and resetWishes() repairs it');
+const oldTab = ss.insertSheet('Buku Tetamu (old)');
+oldTab.appendRow(['Masa (server)', 'Masa (pelawat)', 'Nama', 'Telefon', 'Status']);
+let mismatch = null;
+try { ctx.ensure_(ss, 'Buku Tetamu (old)', ['Masa', 'Nama', 'Ucapan', 'Dijemput']); }
+catch (e) { mismatch = e; }
+check('explains the column mismatch', String(mismatch).indexOf('different columns') > -1, String(mismatch));
+
+console.log('');
 console.log('migrateWishes() moves pre-split wishes out of the RSVP tab');
 sh._rows.push(['2026-01-01 10:00', '', 'Old Guest', '', 'Ucapan', 0, 0, 0,
                'Wish written before the split', '', '']);
@@ -397,9 +411,9 @@ const rsvpWithLegacy = sh.getLastRow();
 ctx.migrateWishes();
 check('the legacy row left the RSVP tab', sh.getLastRow() === rsvpWithLegacy - 1,
       'rows ' + rsvpWithLegacy + ' -> ' + sh.getLastRow());
-check('and landed in "Buku Tetamu"',
-      wishSh._rows[wishSh.getLastRow() - 1][8] === 'Wish written before the split',
-      JSON.stringify(wishSh._rows[wishSh.getLastRow() - 1][8]));
+check('and landed in "Buku Tetamu" as a wish row',
+      wishSh._rows[wishSh.getLastRow() - 1][2] === 'Wish written before the split',
+      JSON.stringify(wishSh._rows[wishSh.getLastRow() - 1]));
 check('dashboard now counts three wishes',
       dashNum(ctx.doGet({ parameter: {} }).getContent(), 'Ucapan buku tetamu') === 3);
 
@@ -439,6 +453,14 @@ check('does not create another spreadsheet',
       Object.keys(store.spreadsheets).length + ' vs ' + sheetsBefore);
 check('does not overwrite the stored id', props.SPREADSHEET_ID === 'NOT-A-REAL-ID', props.SPREADSHEET_ID);
 props.SPREADSHEET_ID = savedId;
+
+console.log('');
+console.log('resetWishes() rebuilds the guestbook tab with its own columns');
+ctx.resetWishes();
+const resetTab = ss.getSheetByName('Buku Tetamu');
+check('header rewritten', resetTab._rows[0].join('|') === 'Masa|Nama|Ucapan|Dijemput',
+      resetTab._rows[0].join('|'));
+check('old rows cleared', resetTab.getLastRow() === 1, resetTab.getLastRow());
 
 console.log('');
 console.log(pass + ' passed, ' + fail + ' failed');
