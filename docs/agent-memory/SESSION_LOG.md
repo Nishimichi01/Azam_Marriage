@@ -235,3 +235,70 @@ The Apps Script dashboard response embeds the CSV link, which leaked the deploym
 **Subagents:** only one of three finished (the details-layout agent — its `work/notes/details.md` design was ported nearly verbatim, including the name/patronymic hierarchy and contact rows). The cover and RSVP/footer agents died on the exhausted LiteLLM budget, so that work was done directly.
 
 **Follow-ups:** nothing outstanding besides the earlier Code.gs redeploy; if the client wants petals during the whole visit rather than from the tap, move `petals()` out of `openCover()`.
+
+## 2026-11-27 — Cover monogram font: Kaushan Script chosen and tuned
+
+**Branch / HEAD:** `main`
+**Task:** find the closest free Google Font to the hand-drawn `I & A` signature monogram in
+`Reference/Signature front page reference.png` (the cover monogram, currently Allura, "too thin/plain").
+Prototype only — `index.html` and `src/` untouched.
+
+**Findings**
+* Reference ink is `#765941` on `#F6F4F2`, ink block 367×693 (aspect 0.53), glyph centres at
+  0.215/0.169, 0.474/0.462, 0.755/0.789. Flat-brush, chisel-cut terminals, low contrast,
+  per-glyph lean 4°/10°/12°; the I is a slab with a bottom claw, the & has a barbed arm, the A's
+  right stem continues into a tail that hooks left.
+* 24 faces compared (`mono-compare.html` renders 20; `shape-probe.html` scores bbox-normalised
+  64×64 IoU). Kaushan Script wins: brush idiom, italic slant, open barbed &, long A crossbar.
+  Caveat Brush is the runner-up (real slab I, best & IoU .55, but no A crossbar, upright).
+  Lobster third (bar I + crossbar A, but uniform stroke — its I reads as "1").
+* Kaushan's `I` is a bare stroke, not a slab: its outline still scores the best I IoU (.42), but
+  the capital has to be carried by context. Documented as the known trade-off.
+
+**Changes** (all under `work/`, gitignored)
+* `work/proto/mono-compare.html` — reference plate + 20 candidates at a shared 240 px stage.
+* `work/proto/mono-final.html` — real cover geometry (`.cpanel`, scallop mask copied out of
+  `index.html`) with the tuned stack.
+* `work/proto/mono-glyphs.html`, `mono-pair.html`, `mono-shortlist.html`, `cover-compare.html` —
+  decision sheets; `work/build_final.py`, `work/measure_ink.py`, `work/probe_build.py` — generators.
+* `work/notes/sig-font.md` — ranking, numbers, integration notes.
+
+**Verified**
+* 390×844: fs 109 px, ink 129×235, ink centred (195.0 vs 195.0), 31 px air above SABTU,
+  `scrollWidth 390 = innerWidth`. 320×680: fs 89.6 px, ink 107×194, 20 px air, `scrollWidth 320`.
+  Ink measured by connected components (`work/measure_ink.py`), not by eye.
+* `.mono` keeps `padding:1% 0 2%` from `index.html` so the box maths transfer to the build.
+
+**Follow-ups**
+* Integration is deliberately not applied: add `("Kaushan Script", "google/KaushanScript-400.woff2",
+  400, "normal")` to `GOOGLE_FONTS` in `src/build.py`, set `--mono`, and replace the `.mono` rules.
+* The reference's slab I with the claw is the one unfaithful detail; a pseudo-element bar on
+  `.mono .i` is the cheap way to recover it if the client wants it.
+
+## 2026-11-27 — Signature monogram, bold full names, bigger date labels, prefilled calendar, smoother scroll
+
+**Asked:** (1) change the cover initials to the font in `Reference/Signature front page reference.png`, resized to fit; (2) the two names are full names, so bold **all** of it and space it so it doesn't overlap; (3) enlarge/bold `SABTU` and `DISEMBER`; (4) `TEMPAT` = "Masjid Prima Saujana / 43000 Kajang, Selangor" only; (5) "Simpan Tarikh" must open Google Calendar **on the date with everything filled in**, so the guest just presses Save; (6) smoother scrolling.
+
+**Findings**
+- The reference is a hand-set signature monogram: stacked, leaning, thick chisel brush (I top-left, & centre, A bottom-right). Two subagents ran: one matched the face, one verified the calendar URL.
+- **Kaushan Script** is the closest free match (flat-brush terminals, italic slant, barbed `&`, crossbar `A`). Caveat: its `I` is a bare stroke, the reference's has slab bars.
+- `calendar/r/eventedit` + naive local `dates` is why the calendar landed on the wrong day. The working contract is `calendar/render?action=TEMPLATE` with **UTC** dates + `ctz`.
+- Bold TheSeasons (p2 subset) has no `E`, so a bold "DISEMBER" silently fell back glyph-by-glyph → date labels moved to **Vollkorn 600**.
+
+**Changes** (`src/index.template.html` → `index.html`, `dist/` synced)
+- Monogram: Kaushan Script, 80–106 px, `line-height .7`, stacked with per-glyph offsets (`I` −.591em/−6°, `&` .82em/−.179em, `A` 1.08em/+.149em/+2°), 3.2 % bottom margin so the ink clears the date line. Font subsetted to `assets/fonts/google/KaushanScript-400.sub.woff2` and registered in `build.py`; Allura removed.
+- Names: one bold block each (`Imas Nazifatuz Zahro` / `Binti Suhaimi`, `Muhammad Azam Muddin` / `Bin Ishak`), TheSeasons 700 italic, `clamp(17px,4.9vw,23px)`, line-height 1.6 — the `.cbin` small-caps line is gone. At 320 the size drops to 17 px so the long line still fits in 241 px.
+- Date: `SABTU` 12.5–14.5 px / 600, `DISEMBER` same, `2026` 11.5–13 px / 600 maroon; the `26` stays TheSeasons 700.
+- Venue: two lines.
+- Calendar: `https://calendar.google.com/calendar/render?action=TEMPLATE&text=…&dates=20261226T030000Z/20261226T080000Z&ctz=Asia/Kuala_Lumpur&location=…&details=…`.
+- Scroll: reveal is 10 px / 480 ms / 45 ms stagger, triggered 2 % before entry; the scalloped card's `drop-shadow` was replaced by a static blurred pseudo-element (a filter over a 2000 px subtree re-rasterised on every reveal); petals fade out and the layer is removed ~8 s after the opening.
+
+**Verification**
+- Built page: `monoFont = "Kaushan Script"`; both `.cname` blocks `font-weight 700`, 19.11 px, 61 px tall (2 lines) at 390 and 17 px (2 lines) at 320 with no overflow (`scrollWidth 305 ≤ 320`, `375 ≤ 390`); date labels computed 13.26 px/600; `TEMPAT` innerText = "Masjid Prima Saujana\n43000 Kajang, Selangor"; calendar href resolves to the `render?action=TEMPLATE` URL above; no page errors; petals = 9 at open and removed after the timer.
+- Monogram spacing measured: 11 px above the date at 390, 7 px at 320.
+- `assets/og.jpg` regenerated (1200×630) with the new monogram; `dist/` byte-identical to `index.html`.
+- Calendar caveat: the browser is signed out, so the prefilled editor could not be seen; both agents confirmed the query round-trips intact through the login redirect, and `render?action=TEMPLATE` + UTC `dates` is the documented contract. Worth one real-device check.
+
+**Subagents:** both completed this time — `sig-font` (font ranking + final geometry, 24 faces tested) and `cal-link` (URL contract). Their notes are in `work/notes/`.
+
+**Follow-ups:** the earlier Code.gs redeploy is still outstanding; if the client prefers the reference's slab `I`, it would need a licensed face (designer file), not a Google font.

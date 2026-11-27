@@ -38,7 +38,7 @@ GOOGLE_FONTS = [
     ("Vollkorn", "google/Vollkorn-400.sub.woff2", "400 900", "normal"),
     ("Vollkorn", "google/Vollkorn-400i.sub.woff2", "400 900", "italic"),
     ("La Belle Aurore", "google/LaBelleAurore-400.sub.woff2", 400, "normal"),
-    ("Allura", "google/Allura-400.sub.woff2", 400, "normal"),
+    ("Kaushan Script", "google/KaushanScript-400.sub.woff2", 400, "normal"),
 ]
 
 

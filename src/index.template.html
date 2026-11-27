@@ -44,7 +44,7 @@
   --amp:"Daydream",Georgia,serif;                    /* the cover's ampersand         */
   --hand:"Brittany Signature","MoonTime",cursive;    /* "dengan pasangannya"          */
   --wish:"La Belle Aurore",cursive;                  /* guestbook wishes              */
-  --mono:"Allura","MoonTime",cursive;                /* cover monogram                */
+  --mono:"Kaushan Script","MoonTime",cursive;         /* cover monogram (signature)    */
   --pad:clamp(19px,6vw,30px);
   --flourish:url("{{FLOURISH}}");
   --petal:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='.6' y2='1'%3E%3Cstop offset='0' stop-color='%23DCC1A6'/%3E%3Cstop offset='.55' stop-color='%23B08B6B'/%3E%3Cstop offset='1' stop-color='%238C6A4E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M12 1c7 6 10 15 0 30C2 16 5 7 12 1Z' fill='url(%23g)'/%3E%3Cpath d='M12 5v24' stroke='%239C7857' stroke-width='.7' opacity='.5'/%3E%3C/svg%3E");
@@ -138,15 +138,18 @@ ul{padding:0;list-style:none}
   letter-spacing:.28em;text-transform:uppercase;color:var(--brown);text-indent:.28em;
 }
 .mono{
-  flex:1;display:flex;align-items:center;justify-content:center;
-  font-family:var(--mono);color:var(--brown);line-height:1;
-  font-size:clamp(104px,31vw,142px);padding:1% 0 2%;gap:.02em;
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--mono);color:var(--brown);
+  font-size:clamp(80px,27vw,106px);line-height:.7;
+  padding:1% 0 4%;margin-bottom:3.2%;transform:translateY(-.02em);
 }
-.mono .i,.mono .a{display:block}
+/* the signature monogram of the reference image: stacked, leaning, hand-set */
+.mono .i{display:block;transform:translateX(-.591em) rotate(-6deg)}
 .mono .amp{
-  font-family:var(--mono);font-size:.64em;line-height:1;
-  margin:0 .02em;transform:translateY(.05em);
+  display:block;font-family:var(--mono);font-size:.82em;line-height:1;
+  transform:translateX(-.179em);
 }
+.mono .a{display:block;font-size:1.08em;transform:translateX(.149em) rotate(2deg)}
 .c-foot{width:100%}
 .c-date{
   font-family:var(--date);font-size:clamp(13px,3.6vw,15px);letter-spacing:.13em;
@@ -205,14 +208,19 @@ section{position:relative;padding:22px 0}
 
 /* reveal on scroll — the card's motion is a soft fade, nothing bouncy */
 .rv{
-  opacity:0;transform:translate3d(0,14px,0);
-  transition:opacity .55s cubic-bezier(.22,.7,.24,1),transform .55s cubic-bezier(.22,.7,.24,1);
-  transition-delay:calc(var(--i,0) * 50ms);
+  opacity:0;transform:translate3d(0,10px,0);
+  transition:opacity .48s cubic-bezier(.22,.7,.24,1),transform .48s cubic-bezier(.22,.7,.24,1);
+  transition-delay:calc(var(--i,0) * 45ms);
 }
 .rv.in{opacity:1;transform:none}
 
 /* ---------- scalloped cream sheet (cover + the card interior) ---------- */
-.sheetwrap{filter:drop-shadow(0 14px 30px rgba(110,80,57,.30))}
+.sheetwrap{position:relative;isolation:isolate}
+.sheetwrap::before{
+  content:"";position:absolute;inset:1.5% 3% 1%;z-index:-1;
+  background:rgba(110,80,57,.30);border-radius:28px;
+  filter:blur(22px);transform:translateY(10px);
+}
 .sheet{
   --p:clamp(22px,6.3vw,27px);   /* scallop pitch, print: 6.96 % of the page width */
   --d:calc(var(--p) * .255);    /* scallop depth, print: 1.78 % of the page width */
@@ -282,15 +290,12 @@ section{position:relative;padding:22px 0}
 .couple{margin-top:var(--h5)}
 .cname{
   font-family:var(--card);font-style:italic;font-weight:700;
-  font-size:clamp(15px,4.7vw,22px);line-height:1.42;letter-spacing:.035em;
+  font-size:clamp(17px,4.9vw,23px);line-height:1.6;letter-spacing:.012em;
   color:var(--brown-d);text-wrap:balance;
+  /* the italic swashes must not run into each other or the lines above */
+  padding:0 .04em;
 }
-.cbin{
-  margin-top:6px;font-family:var(--card);font-weight:700;
-  font-size:clamp(11px,3vw,12.5px);line-height:1.5;
-  letter-spacing:.2em;text-indent:.1em;text-transform:uppercase;
-  color:rgba(120,93,65,.78);
-}
+.cname + .cname{margin-top:var(--h3)}
 .couple .and{
   display:flex;align-items:center;justify-content:center;gap:14px;
   margin:var(--h3) auto;font-family:var(--hand);
@@ -311,9 +316,9 @@ section{position:relative;padding:22px 0}
   column-gap:12px;
 }
 .when .dow{
-  grid-column:1/-1;font-family:var(--card);font-weight:400;
-  font-size:clamp(10.5px,2.9vw,12px);letter-spacing:.34em;text-indent:.17em;
-  line-height:1;margin-bottom:6px;
+  grid-column:1/-1;font-family:var(--serif);font-weight:600;
+  font-size:clamp(12.5px,3.4vw,14.5px);letter-spacing:.32em;text-indent:.16em;
+  line-height:1;margin-bottom:8px;color:var(--brown-d);
 }
 .when .dnum{
   font-family:var(--card);font-weight:700;font-size:clamp(40px,12vw,52px);
@@ -321,11 +326,11 @@ section{position:relative;padding:22px 0}
 }
 .when .dmy{display:grid;gap:4px;text-align:left}
 .when .dmy span{
-  font-family:var(--card);font-weight:400;font-size:clamp(10px,2.8vw,11.5px);
-  letter-spacing:.18em;line-height:1.2;text-transform:uppercase;
+  font-family:var(--serif);font-weight:600;font-size:clamp(12.5px,3.4vw,14.5px);
+  letter-spacing:.2em;line-height:1.25;text-transform:uppercase;color:var(--brown-d);
 }
 .when .dmy span:last-child{
-  color:var(--accent);font-size:clamp(9.5px,2.6vw,11px);letter-spacing:.28em;
+  color:var(--accent);font-size:clamp(11.5px,3.1vw,13px);letter-spacing:.3em;
 }
 .facts{margin-top:var(--h4)}
 .fact{padding:var(--h3) 0;border-top:1px solid var(--line-soft);text-align:center}
@@ -621,7 +626,8 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
 .bar .on .ic{background:var(--brown);border-color:var(--brown);color:#FBF7F1}
 
 /* ============================ PETALS ============================ */
-.petals{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden}
+.petals{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden;
+  transition:opacity 1.1s ease}
 .petal{
   position:absolute;top:-8vh;background:var(--petal) center/contain no-repeat;
   opacity:0;will-change:transform,opacity;
@@ -708,11 +714,9 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
           <p class="hadir rv" style="--i:3">hadir ke majlis perkahwinan puteri kami yang dikasihi,</p>
 
           <div class="couple">
-            <p class="cname rv" style="--i:4">Imas Nazifatuz Zahro</p>
-            <p class="cbin rv" style="--i:4">Binti Suhaimi</p>
+            <p class="cname rv" style="--i:4">Imas Nazifatuz Zahro<br>Binti Suhaimi</p>
             <p class="and rv" style="--i:5">dengan pasangannya</p>
-            <p class="cname rv" style="--i:6">Muhammad Azam Muddin</p>
-            <p class="cbin rv" style="--i:6">Bin Ishak</p>
+            <p class="cname rv" style="--i:6">Muhammad Azam Muddin<br>Bin Ishak</p>
           </div>
 
           <div class="flourish rv" style="--i:7" aria-hidden="true"></div>
@@ -731,7 +735,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
               </div>
               <div class="fact">
                 <dt>Tempat</dt>
-                <dd class="addr">Masjid Prima Saujana<br>Persiaran Prima Saujana<br>Taman Prima Saujana,<br>43000 Kajang, Selangor</dd>
+                <dd class="addr">Masjid Prima Saujana<br>43000 Kajang, Selangor</dd>
               </div>
             </dl>
 
@@ -745,7 +749,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
                 <svg viewBox="0 0 24 24"><path d="M12 3 4 20l8-4 8 4-8-17Z"/></svg>
                 Waze</a>
               <a class="btn sm wide" target="_blank" rel="noopener"
-                 href="https://calendar.google.com/calendar/r/eventedit?text=Walimatul+Urus+Imas+%26+Azam&amp;dates=20261226T110000/20261226T160000&amp;ctz=Asia/Kuala_Lumpur&amp;location=Masjid+Prima+Saujana,+Kajang&amp;details=Walimatul+Urus+Imas+%26+Azam+%E2%80%94+26+Disember+2026">
+                 href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Walimatul%20Urus%20Imas%20%26%20Azam&amp;dates=20261226T030000Z/20261226T080000Z&amp;ctz=Asia/Kuala_Lumpur&amp;location=Masjid%20Prima%20Saujana%2C%20Kajang&amp;details=Walimatul%20Urus%20Imas%20%26%20Azam%20%E2%80%94%2026%20Disember%202026%2C%20Masjid%20Prima%20Saujana%2C%20Kajang.">
                 <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
                 Simpan Tarikh</a>
             </div>
@@ -1193,6 +1197,13 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
       layer.appendChild(p);
     }
     document.body.appendChild(layer);
+
+    // petals belong to the opening, not to the whole visit: once they have all
+    // landed, drop the layer so scrolling never pays for 13 animated nodes
+    window.setTimeout(function () {
+      layer.style.opacity = "0";
+      window.setTimeout(function () { layer.remove(); }, 1200);
+    }, reduce ? 0 : 7000);
   }
 
   /* ============================================================
@@ -1209,7 +1220,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
         entries.forEach(function (en) {
           if (en.isIntersecting) show(en.target);
         });
-      }, { rootMargin: "0px 0px -4% 0px", threshold: 0.01 });
+      }, { rootMargin: "0px 0px 2% 0px", threshold: 0 });
       items.forEach(function (el) { io.observe(el); });
     }
     items.forEach(function (el) {

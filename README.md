@@ -63,12 +63,14 @@ below is in `ref/refcard/DESIGN-SPEC.md`.
 **The brief asked for a phone-first adaptation, not a reproduction.** Three departures from
 the print, all deliberate:
 
-1. **The cover shows initials only** — a large Allura monogram (`MENUJU SATU · I & A ·
-   SABTU | 26.12.2026 · venue`), no tap hint, no full names.
-2. **The interior keeps the card's order but not its layout.** The couple is a name +
-   uppercased patronymic block rather than the card's tight stack; the three-column
-   `SABTU / ALAMAT / MASA MAJLIS` band is replaced by a large date block over two labelled
-   rows (`MASA`, `TEMPAT`); the print's tiny sizes are gone (body ~13–15 px).
+1. **The cover shows initials only** — a large signature monogram (**Kaushan Script**,
+   stacked and leaning like `Reference/Signature front page reference.png`), plus
+   `MENUJU SATU · SABTU | 26.12.2026 · venue`; no tap hint, no full names.
+2. **The interior keeps the card's order but not its layout.** Each couple name is one bold
+   two-line block (`Imas Nazifatuz Zahro / Binti Suhaimi`); the three-column
+   `SABTU / ALAMAT / MASA MAJLIS` band is replaced by a large date block (bold `SABTU`,
+   big `26`, bold `DISEMBER` and a maroon `2026`) over two labelled rows (`MASA`, `TEMPAT`);
+   the print's tiny sizes are gone (body ~13–15 px).
 3. **The QR code was removed** — it belongs on the physical card; the Google Maps / Waze
    buttons do that job on a phone.
 
@@ -78,7 +80,7 @@ secondary typeface — and the guestbook messages use La Belle Aurore.
 
 ## 2. What the invitation does
 
-* **Cover — initials only.** A large Allura monogram on the scalloped panel. Tap/Enter: the
+* **Cover — initials only.** A large Kaushan Script monogram on the scalloped panel. Tap/Enter: the
   panel turns away like a book page (`rotateY`, 1.9 s, hinged on its left edge with a light
   sweep) while dried-petal leaves drift down and the invitation settles in behind it. Nothing
   behind the cover is pre-revealed, and reduced motion skips straight to the open state.
@@ -87,13 +89,20 @@ secondary typeface — and the guestbook messages use La Belle Aurore.
   line, name) → flourish → date block → `MASA` / `TEMPAT` rows → Maps/Waze/calendar → the four
   `UNTUK DIHUBUNGI` numbers as full-width `wa.me` rows.
 * **Countdown** to 26 December 2026, 11:00 (+08:00), then a "majlis sedang/telah berlangsung" line.
+* **Simpan Tarikh** opens Google Calendar *with the event prefilled* —
+  `calendar.google.com/calendar/render?action=TEMPLATE` with UTC `dates`
+  (`20261226T030000Z/20261226T080000Z` = 11:00–16:00 MYT) plus `ctz=Asia/Kuala_Lumpur`,
+  title, venue and description. The guest only presses Save. (`r/eventedit`, and local
+  timestamps without `Z`, are what made it land on the wrong day.)
 * **Senarai Hadiah** — the gift list section (see §3).
 * **RSVP** — the existing Google Sheet flow, restyled.
 * **Sign Our Guestbook** — wishes carousel + form (see §4).
 * **Bottom bar** — `RSVP · Hadiah · Lagu` (music toggle; label flips to `Senyap` while playing).
-* **Scroll reveal** — opacity + 14 px lift only (no animated `blur`, no `backdrop-filter` on the
-  fixed bar), fires once per element, 50 ms stagger: cheap enough to stay smooth on a
-  mid-range phone.
+* **Scroll reveal** — opacity + 10 px lift only (no animated `blur`, no `backdrop-filter` on the
+  fixed bar), fires once per element, 45 ms stagger, triggered just before entry so nothing
+  pops at the bottom edge. The scalloped card's shadow is a static blurred shape instead of a
+  `drop-shadow` that would re-rasterise on every reveal, and the petals are removed ~7 s after
+  the opening so 13 animated nodes never ride along with the scroll.
 * **Personal greeting** — `index.html?to=Encik%20Ahmad` adds `KEPADA / Encik Ahmad` to the cover
   and records who was invited in the sheet.
 * **Closing block** sits on a cream card, not on the toile — the thanks and the share button

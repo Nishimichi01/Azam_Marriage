@@ -40,7 +40,7 @@ no font/image network dependency at all.
 | `--muted` | `#8B735A` | eyebrows, notes |
 | `--card` | TheSeasons (Reg 400 / Bd-p2 700 / BdIt 700i) | the card's serif |
 | `--script` | MoonTime | signature only (`Imas & Azam` — it carries just `A I a m s z`) |
-| `--mono` | Allura | the cover monogram (`I & A`, ~130 px) |
+| `--mono` | Kaushan Script | the cover monogram (`I & A`, stacked + leaning, 80–106 px) |
 | `--amp` | Daydream | the `&` |
 | `--hand` | Brittany Signature | "dengan pasangannya" |
 | `--serif` | Vollkorn | all new copy (the card's secondary face) |
@@ -53,6 +53,15 @@ rule, so only the cover and the card interior carry the scallops.
 Cover rule: **initials only** (`MENUJU SATU`, `I & A`, `SABTU | 26.12.2026`, venue, and the
 optional `KEPADA` line). No tap hint — the client had it removed; the monogram itself is the
 affordance. Do not put the full names back on the cover.
+
+Monogram: Kaushan Script, stacked `I` / `&` / `A` with per-glyph offsets
+(`I` -0.591em/-6°, `&` 0.82em/-0.179em, `A` 1.08em/+0.149em/+2°) copied from
+`Reference/Signature front page reference.png`; the ink needs ~3.2% bottom margin or it
+touches the date line.
+
+Calendar: only `calendar/render?action=TEMPLATE` with **UTC** `dates`
+(`20261226T030000Z/20261226T080000Z`) + `ctz` reliably opens a prefilled, save-ready event;
+`r/eventedit` with naive local timestamps lands on the wrong day.
 
 Opening: the panel is a **two-sided card** (`preserve-3d`, `.cface` + `.cback`,
 `backface-visibility:hidden`) hinged on its left edge and turned `rotateY(-104deg)` over 1.9 s;
@@ -78,7 +87,8 @@ uppercase patronymic), a `.date` block, and `.fact` rows for MASA / TEMPAT. No Q
    scale-consistent at every viewport.
 4. **Bold TheSeasons has no `E`, `p`, `1` or `:`** (the page-2 subset is card-exact). Month
    names, times and phone numbers must use the regular cut (`var(--card)` weight 400) or
-   Vollkorn, otherwise single glyphs silently fall back and the line looks broken.
+   Vollkorn, otherwise single glyphs silently fall back and the line looks broken. The date
+   labels (`SABTU`, `DISEMBER`, `2026`) are therefore **Vollkorn 600**, not TheSeasons bold.
 5. **`file://` blocks the guestbook fetch** (cross-origin `fetch` from a `file:` origin) — use
    `run-locally.bat` for testing. The song and RSVP POST still work.
 6. **Apps Script serves the deployed version, not the editor file.** Any `Code.gs` change
