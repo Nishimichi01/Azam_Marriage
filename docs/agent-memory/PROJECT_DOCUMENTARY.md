@@ -40,7 +40,7 @@ no font/image network dependency at all.
 | `--muted` | `#8B735A` | eyebrows, notes |
 | `--card` | TheSeasons (Reg 400 / Bd-p2 700 / BdIt 700i) | the card's serif |
 | `--script` | MoonTime | signature only (`Imas & Azam` — it carries just `A I a m s z`) |
-| monogram | client artwork | `assets/monogram.webp` — the signature traced from `Reference/Signature front page reference.png`, painted `#785D41`, shown at `height: clamp(168px,26vh,232px)` |
+| cover | MoonTime + Daydream | `Imas` / `&` / `Azam` at 22.78 % / 28.5 % of the panel width; the "I & A" artwork (`assets/monogram.webp`) is kept but unused |
 | `--amp` | Daydream | the `&` |
 | `--hand` | Brittany Signature | "dengan pasangannya" |
 | `--serif` | Vollkorn | all new copy (the card's secondary face) |
@@ -50,27 +50,16 @@ Panel: `assets/panel-scallop.svg` (48 scallops on an arch-topped rect, traced fr
 used as a CSS `mask`. Body sections use a plain cream `.card` with a 1px hairline and an inset
 rule, so only the cover and the card interior carry the scallops.
 
-Cover rule: **initials only** (`MENUJU SATU`, `I & A`, `SABTU | 26.12.2026`, venue, and the
-optional `KEPADA` line). No tap hint — the client had it removed; the monogram itself is the
-affordance. Do not put the full names back on the cover.
+Cover rule: the **printed card's cover**, typographically — `MENUJU SATU`, `Imas`, the card's
+ampersand, `Azam`, `SABTU | 26.12.2026`, venue, then `TEKAN UNTUK BUKA` at the foot and the
+optional `KEPADA` line above it. `.cpanel` uses the **cream panel's** aspect (219.29:334.94),
+not the A6 page's, so the mask is undistorted and the type fractions map 1:1 to the print.
+`.cface{font-size:var(--panelw)}` makes `em` on the children a fraction of the panel width —
+that is how every cover size is expressed (DESIGN-SPEC §5.3). The print's `&` is a drawn
+(Type3) glyph, so Daydream's ampersand needs ~28.5 % of the panel width (not its 17.3 % type
+size) to hold the card's visual weight.
 
-Monogram: **the client's own artwork**, not a font. The PNG is flat two-tone, so it is traced to
-alpha with `alpha = (bg − pixel)/(bg − ink)` (bg `#F6F4F2`, ink `#795C45`), thresholded at .08,
-cropped to the ink, tinted `#785D41` and exported as a 379×705 WebP (7 KB) that `build.py`
-inlines. Substituting a lookalike font (Allura, Kaushan Script, Great Vibes…) was rejected: none
-reproduced the slab `I` and the leaning composition. Keep the trace script
-(`work/trace_monogram.py`) if the artwork changes.
-
-Calendar: only `calendar/render?action=TEMPLATE` with **UTC** `dates`
-(`20261226T030000Z/20261226T080000Z`) + `ctz` reliably opens a prefilled, save-ready event;
-`r/eventedit` with naive local timestamps lands on the wrong day.
-
-Opening: the panel is a **two-sided card** (`preserve-3d`, `.cface` + `.cback`,
-`backface-visibility:hidden`) hinged on its left edge and turned `rotateY(-104deg)` over 1.9 s;
-a blurred `.cshadow` shape sits behind it (a `filter` on the turning element would flatten the
-3D and also kill the mask), `main` fades/settles in from ~660 ms, petals fall from the tap.
-
-Interior layout is **deliberately not the print card**: `.cname` + `.cbin` (italic name, then
+Opening: the panel is a **two-sided card**Interior layout is **deliberately not the print card**: `.cname` + `.cbin` (italic name, then
 uppercase patronymic), a `.date` block, and `.fact` rows for MASA / TEMPAT. No QR.
 
 ## Gotchas (learned the hard way)

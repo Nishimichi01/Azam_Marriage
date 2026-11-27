@@ -321,3 +321,21 @@ Prototype only — `index.html` and `src/` untouched.
 - `index.html` 476 KB (down from 510 KB — the font is no longer inlined) and byte-identical to `dist/`.
 
 **Note:** the earlier subagent font match (Kaushan Script) was a dead end and has been removed; both the reference's slab `I` and its leaning composition only survive if the drawing itself is used.
+
+## 2026-11-27 — Cover back to the printed card's names, with a "Tekan untuk buka" indicator
+
+**Asked:** (1) the cover should show the full names `Imas & Azam` exactly like the printed card (`Reference/Jemputan Imas&Azam-1 (1).pdf`), not the initials; (2) add a "Tekan untuk buka" tap indicator on the cover.
+
+**Changes** (`src/index.template.html` → `index.html`, `dist/` synced)
+- Cover is the print card again, typographically: `MENUJU SATU` (Vollkorn small caps), **Imas** (MoonTime) / the card's **&** (Daydream) / **Azam**, `SABTU | 26.12.2026` (TheSeasons date cut), venue, then `KEPADA …` when `?to=` is present and `TEKAN UNTUK BUKA` at the foot (uppercase, tracked, brown, gentle opacity pulse; `prefers-reduced-motion` keeps it static).
+- The panel now uses the **cream panel's** aspect `219.29:334.94` instead of the A6 page's, so the traced mask is undistorted and the print's type fractions map 1:1; `--panelw` caps the height at 80vh.
+- Every cover size is a fraction of the panel width: `.cface{font-size:var(--panelw)}` and children in `em` — names 22.78 %, ampersand 28.5 % (the print's `&` is a drawn Type3 glyph, so Daydream needs more than its 17.3 % type size to hold the same weight), caps 3.82 %, date 3.82 %, venue 3.64 %, hint 3.45 %.
+- Vertical placement is percentage-based on the card's y0 values (caps 13.6 %, names 21.2/49.2 %, `&` 32.6 %, date 70.4 %, venue 80.4 %, kepada 89 %, hint bottom 2.6 %).
+- The traced "I & A" artwork (`assets/monogram.webp`) and its `{{MONOGRAM}}` build token are no longer used; the file is kept for reference. `assets/og.jpg` regenerated from the new cover.
+
+**Verification**
+- Browser at 390: panel 335×512 (aspect 0.6547 ✓), hint text "Tekan untuk buka" with a live opacity pulse, `KEPADA` hidden without `?to=` and shown with it, names "Imas"/"Azam", cover hides after the turn (`display:none`, `body.on`), `scrollWidth 375 ≤ 390`, petals 9, no page errors.
+- 320 and 1280: panel 275×420 and 372×568, everything scales from the panel width; no overflow.
+- Side-by-side against `ref/refcard/page0.png` at the same panel size: caps/date/venue widths within ~3 %, names within ~8 %, `&` enlarged from 22 px to 33 px ink to match the print's weight.
+
+**Note:** the ampersand still reads lighter than the print's, because the PDF draws it as vector art rather than the Daydream glyph; matching it exactly would need that vector extracted the way the flourish and QR were.

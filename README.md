@@ -23,18 +23,13 @@ apps-script/                ← the Google Sheet endpoint for RSVP + guestbook
 docs/agent-memory/          ← notes for future work sessions
 ```
 
-### 1a. The signature monogram
+### 1a. The monogram asset (unused on the cover now)
 
-No typeface can reproduce a hand-drawn signature, so the artwork itself ships:
-
-1. `Reference/Signature front page reference.png` (brown ink on flat cream) is converted to an
-   **alpha mask** — `alpha = (bg − pixel) / (bg − ink)` per pixel, so the anti-aliased brush edges
-   survive — then cropped to the ink and painted in the card's brown `#785D41`.
-2. The result is `assets/monogram.webp` (379 × 705, 7 KB), inlined by `src/build.py` and shown at
-   `height: clamp(168px, 26vh, 232px)` on the cover.
-
-To swap it, replace that PNG with another signature on a flat background and re-run the trace
-(the script is `work/trace_monogram.py`), or just drop a transparent PNG in its place.
+The earlier "I & A" signature is still in `assets/monogram.webp` — it is
+`Reference/Signature front page reference.png` traced to alpha
+(`alpha = (bg − pixel)/(bg − ink)`, script at `work/trace_monogram.py`) and painted `#785D41`.
+The cover now uses the card's own typography instead, so nothing loads this file; keep it if
+you ever want the signature back.
 
 Rebuild after editing the template:
 
@@ -76,9 +71,10 @@ below is in `ref/refcard/DESIGN-SPEC.md`.
 **The brief asked for a phone-first adaptation, not a reproduction.** Three departures from
 the print, all deliberate:
 
-1. **The cover shows initials only** — the couple's own **hand-drawn signature monogram**,
-   taken from `Reference/Signature front page reference.png` (see §1a), plus
-   `MENUJU SATU · SABTU | 26.12.2026 · venue`; no tap hint, no full names.
+1. **The cover is the printed cover, typographically** — `MENUJU SATU`, **Imas** in the card's
+   brush script, the card's ampersand, **Azam**, then `SABTU | 26.12.2026` and the venue — with
+   a quiet **`TEKAN UNTUK BUKA`** indicator at the foot. The cover box uses the *cream panel's*
+   aspect (not the A6 page's), so the card's own proportions and scallops line up.
 2. **The interior keeps the card's order but not its layout.** Each couple name is one bold
    two-line block (`Imas Nazifatuz Zahro / Binti Suhaimi`); the three-column
    `SABTU / ALAMAT / MASA MAJLIS` band is replaced by a large date block (bold `SABTU`,
@@ -93,7 +89,8 @@ secondary typeface — and the guestbook messages use La Belle Aurore.
 
 ## 2. What the invitation does
 
-* **Cover — initials only.** The couple's hand-drawn `I & A` signature on the scalloped panel. Tap/Enter: the
+* **Cover — the printed cover.** `MENUJU SATU · Imas & Azam · SABTU | 26.12.2026 · venue`, with
+  `TEKAN UNTUK BUKA` pulsing gently at the bottom; the whole panel is the button. Tap/Enter: the
   panel turns away like a book page (`rotateY`, 1.9 s, hinged on its left edge with a light
   sweep) while dried-petal leaves drift down and the invitation settles in behind it. Nothing
   behind the cover is pre-revealed, and reduced motion skips straight to the open state.

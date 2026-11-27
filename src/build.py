@@ -8,8 +8,6 @@ index.html needs no network at all (fonts included):
 
     {{CARD_TILE}}    assets/card-tile-500.webp  the print's botanical toile cell (tiles seamlessly)
     {{PANEL_MASK}}   assets/panel-scallop.svg   scalloped card silhouette (CSS mask)
-    {{MONOGRAM}}     assets/monogram.webp       the signature monogram, traced from the
-                                                client's reference PNG (alpha only)
     {{FLOURISH}}     assets/flourish.svg        ornamental divider
     {{FONTS}}        @font-face block           card subsets + Vollkorn + La Belle Aurore
 """
@@ -64,7 +62,6 @@ def main() -> int:
     tokens = {
         "{{CARD_TILE}}": data_uri(ROOT / "assets" / "card-tile-500.webp", "image/webp"),
         "{{PANEL_MASK}}": data_uri(ROOT / "assets" / "panel-scallop.svg", "image/svg+xml"),
-        "{{MONOGRAM}}": data_uri(ROOT / "assets" / "monogram.webp", "image/webp"),
         "{{FLOURISH}}": data_uri(ROOT / "assets" / "flourish.svg", "image/svg+xml"),
     }
     for token, uri in tokens.items():

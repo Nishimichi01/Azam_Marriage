@@ -89,6 +89,7 @@ ul{padding:0;list-style:none}
 
 /* ============================ COVER ============================ */
 #cover{
+  --panelw:min(86vw,372px,calc(80vh * 0.6547));
   position:fixed;inset:0;z-index:60;display:grid;place-items:center;
   padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));
   cursor:pointer;
@@ -109,7 +110,7 @@ ul{padding:0;list-style:none}
 
 /* ---- the page that turns ---- */
 .cpanel{
-  position:relative;width:min(86vw,372px,calc(80vh * 0.71));aspect-ratio:297.75/419.25;
+  position:relative;width:var(--panelw);aspect-ratio:219.29/334.94;
   transform-style:preserve-3d;transform-origin:0% 50%;will-change:transform;
 }
 #cover.go .cpanel{animation:pageTurn 1.9s cubic-bezier(.5,.02,.22,1) forwards}
@@ -140,52 +141,62 @@ ul{padding:0;list-style:none}
   100%{opacity:0;transform:translateX(70%)}
 }
 
-/* ---- cover type: sized for a phone, not for the A6 card ---- */
-.c-caps{
-  font-family:var(--serif);font-weight:500;font-size:clamp(10.5px,2.9vw,12px);
-  letter-spacing:.28em;text-transform:uppercase;color:var(--brown);text-indent:.28em;
+/* ---- cover type: the print card's cover, at the card's own proportions ----
+   Every size below is a share of the panel width (DESIGN-SPEC §5.3), so the
+   cover keeps the PDF's rhythm on any phone: .cface's font-size *is* the panel
+   width, and `em` on the children is therefore a fraction of the panel.        */
+.cface{position:absolute;inset:0;padding:0;font-size:var(--panelw)}
+.cface > *{position:absolute;left:0;right:0;text-align:center;margin:0}
+
+.c-cap{
+  top:13.6%;font-family:var(--serif);font-weight:400;font-size:.0382em;
+  letter-spacing:.164em;text-indent:.164em;text-transform:uppercase;color:var(--brown);
 }
-.mono{
-  flex:1;display:flex;align-items:center;justify-content:center;
-  padding:1% 0 3%;margin-bottom:3%;
-}
-/* The monogram is the client's own artwork (Reference/Signature front page
-   reference.png), traced to an alpha mask and painted in the card's brown —
-   no typeface can reproduce a hand-drawn signature, so the ink itself ships. */
-.mono img{
-  display:block;height:clamp(168px,26vh,232px);width:auto;
-  aspect-ratio:379 / 705;
-}
-.c-foot{width:100%}
-.c-date{
-  font-family:var(--date);font-size:clamp(13px,3.6vw,15px);letter-spacing:.13em;
+.c-name{
+  font-family:var(--script);font-weight:400;font-size:.2278em;line-height:1;
   color:var(--brown);white-space:nowrap;
+}
+.c-name.n1{top:21.2%}
+.c-amp{
+  top:32.6%;font-family:var(--amp);font-size:.285em;line-height:1;color:var(--brown);
+}
+.c-name.n2{top:49.2%}
+.c-date{
+  top:70.4%;font-family:var(--date);font-size:.0382em;line-height:1.2;
+  letter-spacing:.067em;color:var(--brown);white-space:nowrap;
 }
 .c-date i{
   display:inline-block;width:1px;height:.9em;background:currentColor;opacity:.45;
   vertical-align:-.06em;margin:0 .6em;
 }
 .c-venue{
-  margin-top:13px;font-family:var(--serif);font-weight:600;font-style:italic;
-  font-size:clamp(10.5px,2.9vw,12.5px);line-height:1.5;letter-spacing:.18em;text-transform:uppercase;
+  top:80.4%;font-family:var(--serif);font-weight:600;font-style:italic;
+  font-size:.0364em;line-height:1.34;letter-spacing:.164em;text-transform:uppercase;
 }
-.kepada{display:none;margin-top:18px;line-height:1.35;max-width:100%}
+
+/* the guest's name, small, under the venue */
+.kepada{display:none;top:89%;font-size:.0315em;line-height:1.35;color:var(--muted)}
 .kepada.on{display:block}
 .kepada span{
-  display:block;font-size:clamp(8.4px,2.3vw,9.5px);font-weight:500;
-  letter-spacing:.32em;text-transform:uppercase;color:var(--muted);text-indent:.32em;
+  font-family:var(--serif);font-weight:500;font-size:.86em;letter-spacing:.24em;
+  text-transform:uppercase;text-indent:.24em;
 }
 .kepada b{
-  display:block;font-weight:600;font-style:italic;font-size:clamp(13px,3.7vw,15px);
-  color:var(--brown-d);line-height:1.35;margin-top:3px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:20ch;margin-inline:auto;
+  font-family:var(--serif);font-weight:600;font-style:italic;font-size:1.06em;
+  color:var(--brown-d);letter-spacing:.01em;
+  display:inline-block;max-width:18ch;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;vertical-align:bottom;
 }
-/* the only "tap me" affordance left: a slow, quiet breath */
+
+/* "Tekan untuk buka" — the only instruction, kept quiet */
+.c-hint{
+  bottom:2.6%;font-family:var(--serif);font-weight:500;
+  font-size:.0345em;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--brown);text-indent:.14em;transition:opacity .4s;
+}
 @media (prefers-reduced-motion:no-preference){
-  .mono img{animation:monoIn 1.6s cubic-bezier(.2,.8,.2,1) both}
-  @keyframes monoIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
-  .c-date,.c-venue,.kepada{animation:coverIn .9s ease .35s both}
-  @keyframes coverIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .c-hint{animation:hintPulse 2.8s ease-in-out infinite}
+  @keyframes hintPulse{0%,100%{opacity:.9}50%{opacity:.45}}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -675,21 +686,20 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
 <body class="lock">
 <div class="toile" aria-hidden="true"></div>
 
-<!-- ============================ COVER · initials only ============================ -->
-<div id="cover" role="button" tabindex="0" aria-label="Buka jemputan Imas dan Azam">
+<!-- ============================ COVER · the printed card, tappable ============================ -->
+<div id="cover" role="button" tabindex="0" aria-label="Tekan untuk buka jemputan Imas dan Azam">
   <div class="cstage">
     <div class="cshadow" aria-hidden="true"></div>
     <div class="cpanel">
       <div class="cface">
-        <p class="c-caps">Menuju Satu</p>
-        <div class="mono">
-          <img src="data:image/webp;base64,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OCAkAgAAcD0AnQEqewHBAj4xGItEoiGhEAQAIAMEtLdwu7CPbgAACs3a8XJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+2TkPfbJyHvtk5D32ych77ZOQ99snIe+1YAA/v+4fn//1te28N4//+HKn07bAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" width="379" height="705" alt="Imas dan Azam">
-        </div>
-        <div class="c-foot">
-          <p class="c-date">SABTU<i aria-hidden="true"></i>26.12.2026</p>
-          <p class="c-venue">Masjid Prima Saujana,<br>Kajang.</p>
-          <p class="kepada" id="kepada"><span>Kepada</span><b></b></p>
-        </div>
+        <p class="c-cap">Menuju Satu</p>
+        <p class="c-name n1" aria-hidden="true">Imas</p>
+        <p class="c-amp" aria-hidden="true">&amp;</p>
+        <p class="c-name n2" aria-hidden="true">Azam</p>
+        <p class="c-date">SABTU<i aria-hidden="true"></i>26.12.2026</p>
+        <p class="c-venue">Masjid Prima Saujana,<br>Kajang.</p>
+        <p class="kepada" id="kepada"><span>Kepada</span> <b></b></p>
+        <p class="c-hint">Tekan untuk buka</p>
       </div>
       <div class="cback" aria-hidden="true"></div>
     </div>
