@@ -186,3 +186,52 @@ The Apps Script dashboard response embeds the CSV link, which leaked the deploym
 - Test the song on a real iPhone (Low Power Mode blocks unmuted playback; the retry + `Lagu` button are the fallbacks).
 - The sheet still holds the 4 old `UJIAN/DIAG` test rows — safe to delete; the guestbook filters them out.
 - Nothing was committed or pushed (a push would deploy).
+
+## 2026-11-27 — Redesigned the invitation details hero for phone (prototype)
+
+**Branch / HEAD:** `main`
+**Asked:** rebuild the details/hero section of the wedding e-invitation as a phone-first layout: breathing room, non-cramped couple names, QR removed, SABTU/ALAMAT/MASA print band reworked. Sandbox only (`work/proto/details.html`), serve on :8899.
+
+**Changes (all inside `work/`, nothing in `index.html`/`src/`):**
+- Replaced the hero CSS block and hero markup in `work/proto/details.html`: spacing tokens `--h2..--h5` (11/16/22/30 → 13/20/27/36 px), sheet inner padding +4px per side.
+- Couple block: `.cname` (TheSeasons italic, `clamp(15.5px,4.9vw,23px)`, lh 1.42) + `.cbin` (uppercase, .2em tracking) + `.and` script line with hairlines via ::before/::after.
+- `.when`: `.date` grid (SABTU / big 26 / DISEMBER+2026 maroon) then `.facts` `<dl>` rows with hairlines for Masa and Tempat.
+- Buttons: 2-up Maps/Waze + full-width Simpan Tarikh, 46px min-height.
+- Contacts: `wa.me` rows, 48px, number left / name right, hairline separators.
+- Deleted `.qr`, `.qr-row`, `.qr-note`, `.band3` CSS and their markup (QR data URI included).
+
+**Verified at 320/390/1280:** `scrollWidth ≤ innerWidth` (305/320, 375/390, 1265/1280); longest name 268px of 302px content at 390 and 220/241 at 320 (single line); all 15 `.rv` reveal; scallop mask intact; RSVP sheet opens/closes; page scrolls to countdown/hadir/guestbook/footer.
+
+**Notes:** `work/notes/details.md` (structure, spacing scale, exact CSS/markup to port, rejected ideas). Screenshots in `work/shots/details-*.png`.
+
+**Caveat:** `index.html`/`src/*` show modifications from a concurrent session, not from this task.
+
+## 2026-11-27 — Phone-first cover, book-turn opening, new details layout, RSVP + footer rework
+
+**Asked:** (1) cover type too small for phones, initials too basic/small, remove "ketik untuk membuka"; (2) slower, smoother opening — "like opening a book", with theme-appropriate petals; (3) details section copied the card too literally, couple names cramped — different layout is fine if the order holds; (4) remove the QR, rework SABTU/ALAMAT/MASA MAJLIS for mobile; (5) revamp the RSVP form UI and field sizing; (6) footer thanks + "Kongsi Jemputan" illegible on the wallpaper; (7) smoother scrolling.
+
+**Findings**
+- Great Vibes' capital `I` reads as `J`; Pinyon's `&` is tiny; Allura reads "I & A" cleanly at large size → **Allura** became the monogram face (`--mono`, 104–142 px).
+- A `filter` on the turning page forces `transform-style: flat`, so the page-turn needs a **separate blurred shadow div** (`.cshadow`) instead of `drop-shadow`.
+- Bold TheSeasons (page-2 subset) has no `E`, `p`, `1` or `:` → the month ("DISEMBER"), the time ("11:00 …") and the phone numbers must use the **regular cut** (`var(--type)` weight 400) or glyphs fall back mid-line.
+- The reveal's animated `blur(6px)` and the bar's live `backdrop-filter` were the two expensive things while scrolling on a phone.
+
+**Changes** (`src/index.template.html`, rebuilt to `index.html`/`dist`)
+- Cover: caps 12 px, Allura monogram with `&` at .64em, date 15 px, venue 12.5 px, no hint text; panel 86 vw with a blurred shadow shape.
+- Opening: two-sided card (`.cface`/`.cback`, `preserve-3d`, backface hidden) hinged left, `rotateY(-104deg)` over 1.9 s with a light sweep; `main` fades/settles from 660 ms; cover hidden at 2.45 s; 9–13 falling dried-petal leaves (`.petals`, transform/opacity only) started on the tap.
+- Details: `name (italic) + patronymic (uppercase, tracked)` couple block with 16–20 px gaps and a hairline script line; date block (`SABTU` / big `26` / `DISEMBER 2026`); `MASA` and `TEMPAT` rows; buttons 2-up + full width; contacts as 48 px rows (number left, role right). QR removed with its CSS/markup; build.py no longer inlines `qr.svg`.
+- RSVP sheet: grabber, 52 px fields / 10 px radius / 16 px text, 50 px segmented control, full-width 54 px submit, focus ring, finished success panel. One shared field style for RSVP + guestbook.
+- Footer: the closing block moved onto a cream `.card` (thanks, signature, credit, share) — contrast fixed.
+- Scroll: `.rv` is now opacity + 14 px translate (no filter, no `will-change`), 550 ms, 50 ms stagger, reveal-once; bar lost its `backdrop-filter`; guestbook card got 56 px bottom padding so the bar can't cover its submit.
+
+**Verification**
+- Cover/panel: monogram + `?to=` KEPADA both render; no "Ketik" string and no QR string left in the file.
+- Page turn: sampled `getComputedStyle(.cpanel).transform` → matrix3d progressing 0.13 → 0.99 → past 90°; petals created (9–13) with visible rects; a frozen −25° render confirmed the 3D panel and the petal asset both paint.
+- Scroll: all 23 `.rv` reveal after a stepped scroll; `filter:none`, `will-change:auto`, bar `backdrop-filter:none`.
+- Widths: 320/390/1280 → `scrollWidth ≤ innerWidth` (305/320, 375/390, 1265/1280); name fits one line at 320; RSVP fields 52 px at 320 with the submit reachable.
+- `node --check work/inline.js` OK; `node apps-script/test.js` 51 pass (backend untouched).
+- `assets/og.jpg` regenerated from the new cover (1200×630) and copied to `dist/`.
+
+**Subagents:** only one of three finished (the details-layout agent — its `work/notes/details.md` design was ported nearly verbatim, including the name/patronymic hierarchy and contact rows). The cover and RSVP/footer agents died on the exhausted LiteLLM budget, so that work was done directly.
+
+**Follow-ups:** nothing outstanding besides the earlier Code.gs redeploy; if the client wants petals during the whole visit rather than from the tap, move `petals()` out of `openCover()`.

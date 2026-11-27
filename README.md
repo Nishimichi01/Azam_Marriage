@@ -58,16 +58,19 @@ below is in `ref/refcard/DESIGN-SPEC.md`.
 | Inside serif | TheSeasons 7.29–21.81 pt, tracking .067 em | `--card` (TheSeasons Reg/Bd/BdIt) |
 | "dengan pasangannya" | Brittany Signature 9.53 pt | `--hand` |
 | Detail order | greeting → hosts → menjemput → guest line → puteri kami → names → flourish → date/address/time → QR → contacts | identical, in the same order |
-| QR | vector QR of `maps.app.goo.gl/TxpW6quXn25QASN97` | same QR, clickable |
+| QR | vector QR of `maps.app.goo.gl/TxpW6quXn25QASN97` | **removed** (physical-card affordance; Maps/Waze buttons instead) |
 
-**Two deliberate departures, both required by the brief:**
+**The brief asked for a phone-first adaptation, not a reproduction.** Three departures from
+the print, all deliberate:
 
-1. **The cover shows initials only** (`MENUJU SATU · I & A · SABTU | 26.12.2026 · venue`),
-   not the full names — tapping it opens the invitation.
-2. **Type is enlarged for the screen.** The print is A6, so body copy is 7.29 pt. The page
-   keeps the card's size *ratios* but sets body copy at ~15 px; past that point the card's
-   single page no longer fits a phone, which is why the interior is one tall scalloped sheet
-   instead of an A6 page.
+1. **The cover shows initials only** — a large Allura monogram (`MENUJU SATU · I & A ·
+   SABTU | 26.12.2026 · venue`), no tap hint, no full names.
+2. **The interior keeps the card's order but not its layout.** The couple is a name +
+   uppercased patronymic block rather than the card's tight stack; the three-column
+   `SABTU / ALAMAT / MASA MAJLIS` band is replaced by a large date block over two labelled
+   rows (`MASA`, `TEMPAT`); the print's tiny sizes are gone (body ~13–15 px).
+3. **The QR code was removed** — it belongs on the physical card; the Google Maps / Waze
+   buttons do that job on a phone.
 
 Because the card's fonts are Canva **subsets** (MoonTime only carries `A I a m s z`), they are
 used only for the exact strings on the card. All new UI copy uses Vollkorn — the card's own
@@ -75,19 +78,27 @@ secondary typeface — and the guestbook messages use La Belle Aurore.
 
 ## 2. What the invitation does
 
-* **Cover — initials only.** The scalloped panel floats on the toile. Tap/Enter: the panel
-  lifts and dissolves while the card's inside page fades in line by line (blur + lift, 65 ms
-  stagger). Nothing behind the cover is pre-revealed.
-* **The card's interior**, top to bottom in the card's order, closing with the QR, Maps/Waze/
-  calendar buttons and the four `UNTUK DIHUBUNGI` numbers (each a `wa.me` link).
+* **Cover — initials only.** A large Allura monogram on the scalloped panel. Tap/Enter: the
+  panel turns away like a book page (`rotateY`, 1.9 s, hinged on its left edge with a light
+  sweep) while dried-petal leaves drift down and the invitation settles in behind it. Nothing
+  behind the cover is pre-revealed, and reduced motion skips straight to the open state.
+* **The card's interior** in the card's order — greeting → hosts → *dengan segala hormatnya
+  menjemput* → addressee + rule → *hadir ke majlis…* → the couple (name, patronymic, script
+  line, name) → flourish → date block → `MASA` / `TEMPAT` rows → Maps/Waze/calendar → the four
+  `UNTUK DIHUBUNGI` numbers as full-width `wa.me` rows.
 * **Countdown** to 26 December 2026, 11:00 (+08:00), then a "majlis sedang/telah berlangsung" line.
 * **Senarai Hadiah** — the gift list section (see §3).
 * **RSVP** — the existing Google Sheet flow, restyled.
 * **Sign Our Guestbook** — wishes carousel + form (see §4).
 * **Bottom bar** — `RSVP · Hadiah · Lagu` (music toggle; label flips to `Senyap` while playing).
+* **Scroll reveal** — opacity + 14 px lift only (no animated `blur`, no `backdrop-filter` on the
+  fixed bar), fires once per element, 50 ms stagger: cheap enough to stay smooth on a
+  mid-range phone.
 * **Personal greeting** — `index.html?to=Encik%20Ahmad` adds `KEPADA / Encik Ahmad` to the cover
   and records who was invited in the sheet.
-* Reduced motion is respected: no reveals, no shimmer, instant open.
+* **Closing block** sits on a cream card, not on the toile — the thanks and the share button
+  were washing into the wallpaper.
+* Reduced motion is respected: no reveals, no petals, instant open.
 
 ## 3. The gift list (hadiah)
 
@@ -249,6 +260,10 @@ a receipt with an optional "Hantar juga melalui WhatsApp".
 2. **Dark mode** — intentionally absent: the card is a cream/mocha artefact and a dark theme
    would break it. `color-scheme: light` is pinned.
 3. **`noindex`** — set so the family's phone numbers don't end up in search results.
+3b. **Typefaces** — the cover monogram is **Allura** (OFL); the card's own script (MoonTime)
+   only carries `A I a m s z`, so it cannot be used for new words. Bold TheSeasons strings must
+   be card-exact: the bold subset has no `E`, `p`, `1` or `:`, which is why the month/date/time
+   lines are set in the regular cut.
 4. **Accessibility** — the cover is a real button (Enter/Space), the RSVP sheet and the
    all-wishes overlay close with Escape and return focus, every control is reachable by
    keyboard, and reduced-motion is honoured.

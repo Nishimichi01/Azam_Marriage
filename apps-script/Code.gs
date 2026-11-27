@@ -1,37 +1,32 @@
-/**
- * RSVP endpoint — Walimatul Urus · Imas & Azam
- * ---------------------------------------------------------------------------
- * Stores every RSVP as a row in a Google Sheet, and serves the whole sheet as
- * a CSV on demand. Runs on Google's free Apps Script — no server, no database,
- * no monthly limit for a wedding.
- *
- * SETUP (3 minutes)
- *  1. Open https://script.google.com → "New project".
- *  2. Delete the sample code, paste this file, then press Save.
- *  3. SECRET below is already set to the deployed value — it MUST stay identical
- *     to RSVP_KEY in index.html, otherwise every save silently fails.
- *  4. Deploy → "New deployment" → type "Web app"
- *       Description : RSVP
- *       Execute as  : Me
- *       Access      : Anyone            ← required, otherwise guests get 401
- *     Press Deploy, authorise the script, and copy the URL ending in "/exec".
- *  5. Put that URL into RSVP_ENDPOINT in index.html and set
- *     RSVP_CHANNEL = "sheet". Rebuild with `python src/build.py`.
- *
- * CSV
- *  - Spreadsheet: File → Download → Comma-separated values (.csv)
- *  - Live URL   : <your /exec URL>?csv=1&key=YOUR_SECRET   (downloads a fresh CSV)
- *  - Dashboard  : <your /exec URL>                          (totals + CSV link)
- */
+// RSVP + guestbook endpoint - Walimatul Urus Imas & Azam
+// ---------------------------------------------------------------------------
+// One Apps Script web app shared by the invitation (index.html):
+//
+//   POST  { key, nama, telefon, status, dewasa, kanak_kanak, ucapan, ... }
+//         status "hadir" / "tidak"  -> an RSVP row
+//         status "ucapan"           -> a guestbook wish (never a guest)
+//   GET                          -> dashboard: totals + CSV link
+//   GET  ?csv=1&key=SECRET       -> the whole sheet as CSV
+//
+// Rows go into the "RSVP" tab of the spreadsheet whose id sits in the
+// SPREADSHEET_ID script property (a bound script uses its own sheet instead).
+//
+// To publish a change: paste this file, Save, then
+// Deploy > Manage deployments > pencil > Version: New version > Deploy.
+// Saving alone does not change what guests hit.
+//
+// SECRET must equal RSVP_KEY in index.html. It is not a real secret - the page
+// ships with it - so treat the guest list as readable by anyone holding the
+// invitation link.
 
 var SHEET_NAME = 'RSVP';
 var SECRET     = '$DanishVb09';                 // must match RSVP_KEY in index.html
 var TIMEZONE   = 'Asia/Kuala_Lumpur';
-var TITLE      = 'RSVP · Walimatul Urus Imas & Azam';
+var TITLE      = 'RSVP - Walimatul Urus Imas & Azam';
 
-// The guestbook (index.html) posts wishes with this marker in place of a phone
-// number: a non-empty, never-matching value stops find_() from updating (and so
-// wiping) an existing RSVP row that happens to carry the same name.
+// The guestbook posts wishes with this marker in place of a phone number: a
+// non-empty, never-matching value stops find_() from updating (and so wiping)
+// an existing RSVP row that happens to carry the same name.
 var GUESTBOOK_MARK = '0000000000';
 
 var HEADERS = [
@@ -39,7 +34,7 @@ var HEADERS = [
   'Dewasa', 'Kanak-kanak', 'Jumlah tetamu', 'Ucapan', 'Dijemput', 'Halaman'
 ];
 
-/* ------------------------------------------------------------------ POST */
+// ---------------------------------------------------------------- POST
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -52,7 +47,7 @@ function doPost(e) {
   try {
     var body = parse_(e);
 
-    // accept both this page's field names and the shorter { name, attending, pax } style
+    // accept this page's field names and the shorter { name, attending, pax } style
     if (body.nama === undefined) body.nama = body.name;
     if (body.telefon === undefined) body.telefon = body.phone;
     if (body.ucapan === undefined) body.ucapan = body.message;
@@ -113,7 +108,7 @@ function doPost(e) {
   }
 }
 
-/* ------------------------------------------------------------------- GET */
+// ----------------------------------------------------------------- GET
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
@@ -122,10 +117,8 @@ function doGet(e) {
     if (SECRET && p.key !== SECRET) return text_('Unauthorized', 'text/plain');
     var file = TITLE.replace(/[^A-Za-z0-9]+/g, '-') + '-' +
                Utilities.formatDate(new Date(), TIMEZONE, 'yyyyMMdd-HHmm') + '.csv';
-    var out = ContentService.createTextOutput(csv_())
+    return ContentService.createTextOutput(csv_())
       .setMimeType(ContentService.MimeType.CSV);
-    // Not all browsers honour a filename on ContentService, the sheet download always does.
-    return out;
   }
 
   var rows = book_().sh.getDataRange().getValues().slice(1);
@@ -154,14 +147,14 @@ function doGet(e) {
   );
 }
 
-/* -------------------------------------------------------------- helpers  */
+// ------------------------------------------------------------- helpers
 
 function book_() {
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty('SPREADSHEET_ID');
   var ss = null;
 
-  // 1. bound script (Extensions > Apps Script from inside a sheet) — use that sheet
+  // 1. bound script (Extensions > Apps Script from inside a sheet) - use that sheet
   try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (err) { ss = null; }
 
   // 2. already created by a previous run
@@ -169,7 +162,7 @@ function book_() {
     try { ss = SpreadsheetApp.openById(id); } catch (err) { ss = null; }
   }
 
-  // 3. standalone script, first run — create the spreadsheet and remember it
+  // 3. standalone script, first run - create the spreadsheet and remember it
   if (!ss) {
     ss = SpreadsheetApp.create(TITLE);
     props.setProperty('SPREADSHEET_ID', ss.getId());
@@ -269,7 +262,7 @@ function text_(body, mime) {
     .setMimeType(mime === 'text/plain' ? ContentService.MimeType.TEXT : ContentService.MimeType.JSON);
 }
 
-/** Optional: run this once from the editor to create the sheet + headers early. */
+// Optional: run this once from the editor to create the sheet + headers early.
 function setup() {
   var book = book_();
   Logger.log('Spreadsheet: ' + book.ss.getUrl());

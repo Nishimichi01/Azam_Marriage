@@ -39,7 +39,8 @@ no font/image network dependency at all.
 | `--accent` | `#4D0F17` | `DIS` / `2026` maroon |
 | `--muted` | `#8B735A` | eyebrows, notes |
 | `--card` | TheSeasons (Reg 400 / Bd-p2 700 / BdIt 700i) | the card's serif |
-| `--script` | MoonTime | cover initials |
+| `--script` | MoonTime | signature only (`Imas & Azam` — it carries just `A I a m s z`) |
+| `--mono` | Allura | the cover monogram (`I & A`, ~130 px) |
 | `--amp` | Daydream | the `&` |
 | `--hand` | Brittany Signature | "dengan pasangannya" |
 | `--serif` | Vollkorn | all new copy (the card's secondary face) |
@@ -49,8 +50,17 @@ Panel: `assets/panel-scallop.svg` (48 scallops on an arch-topped rect, traced fr
 used as a CSS `mask`. Body sections use a plain cream `.card` with a 1px hairline and an inset
 rule, so only the cover and the card interior carry the scallops.
 
-Cover rule: **initials only** (`MENUJU SATU`, `I & A`, `SABTU | 26.12.2026`, venue) — the
-client asked for this explicitly; do not put the full names back on the cover.
+Cover rule: **initials only** (`MENUJU SATU`, `I & A`, `SABTU | 26.12.2026`, venue, and the
+optional `KEPADA` line). No tap hint — the client had it removed; the monogram itself is the
+affordance. Do not put the full names back on the cover.
+
+Opening: the panel is a **two-sided card** (`preserve-3d`, `.cface` + `.cback`,
+`backface-visibility:hidden`) hinged on its left edge and turned `rotateY(-104deg)` over 1.9 s;
+a blurred `.cshadow` shape sits behind it (a `filter` on the turning element would flatten the
+3D and also kill the mask), `main` fades/settles in from ~660 ms, petals fall from the tap.
+
+Interior layout is **deliberately not the print card**: `.cname` + `.cbin` (italic name, then
+uppercase patronymic), a `.date` block, and `.fact` rows for MASA / TEMPAT. No QR.
 
 ## Gotchas (learned the hard way)
 
@@ -60,25 +70,30 @@ client asked for this explicitly; do not put the full names back on the cover.
    back to Vollkorn mid-word (which looks broken). Check a new string against
    `fontTools` cmap before using a card face.
 2. **Chrome drops the mask when `filter` and `mask` are on the same element** (the scallops
-   vanish). Always put `drop-shadow` on a wrapper (`.cwrap`, `.sheetwrap`).
+   vanish). Always put `drop-shadow` on a wrapper (`.sheetwrap`) — and on the cover, use the
+   separate blurred `.cshadow` div, because a `filter` also forces `transform-style: flat` and
+   would break the page-turn.
 3. **`background-size: 132% auto` broke the fixed toile** on tall viewports (white band at the
    bottom). The toile is now the 1000px cell tiled at `175px`/`220px`, which is seamless and
    scale-consistent at every viewport.
-4. **`file://` blocks the guestbook fetch** (cross-origin `fetch` from a `file:` origin) — use
+4. **Bold TheSeasons has no `E`, `p`, `1` or `:`** (the page-2 subset is card-exact). Month
+   names, times and phone numbers must use the regular cut (`var(--card)` weight 400) or
+   Vollkorn, otherwise single glyphs silently fall back and the line looks broken.
+5. **`file://` blocks the guestbook fetch** (cross-origin `fetch` from a `file:` origin) — use
    `run-locally.bat` for testing. The song and RSVP POST still work.
-5. **Apps Script serves the deployed version, not the editor file.** Any `Code.gs` change
+6. **Apps Script serves the deployed version, not the editor file.** Any `Code.gs` change
    needs Deploy → Manage deployments → Edit → *New version*.
-6. **Old Code.gs + guestbook = overwrite risk.** The guestbook posts
+7. **Old Code.gs + guestbook = overwrite risk.** The guestbook posts
    `telefon:"0000000000"` because `find_()` only skips name matching when a phone is present;
    without it a wish would overwrite that guest's RSVP row. The updated `Code.gs` also treats
    `status:"ucapan"` as a wish (Status `Ucapan`, 0 guests, always append).
-7. **Sheet coercion:** phone numbers must stay text (leading zero). Already handled in
+8. **Sheet coercion:** phone numbers must stay text (leading zero). Already handled in
    `Code.gs` (`@` format + rewrite).
-8. **Screenshot artifacts are pruned** by the browser harness within minutes; copy anything
+9. **Screenshot artifacts are pruned** by the browser harness within minutes; copy anything
    you need into `work/shots/` immediately.
 9. **`node --check` on process substitution fails on this Windows setup** — write the inline
    script to `work/inline.js` first.
-10. **The song** must start and loop at 115 s. `loop=1` alone restarts at 0:00, so the YT
+11. **The song** must start and loop at 115 s. `loop=1` alone restarts at 0:00, so the YT
     **IFrame API** seeks on `ENDED`. Playback is started on the cover tap (user gesture);
     `unMute()` inside that handler is what makes sound allowed on mobile. The iframe is a
     full-size player parked below the viewport (`bottom:-320px`) rather than a 2×2 px box —
@@ -102,3 +117,7 @@ client asked for this explicitly; do not put the full names back on the cover.
   (`work/mock_rsvp.py` on :8898 + `work/test-local.html`), RSVP success screen, no horizontal
   overflow at 320/360/390/1280, footer clear of the fixed bar.
 * Never submit test data to the live sheet; use the mock copy.
+* Animation frames can't be trusted from headless screenshots (composited layers sometimes
+  come back blank). Verify motion by reading computed styles over time
+  (`getComputedStyle(panel).transform`, petal rects), then confirm the static end state with a
+  screenshot.

@@ -9,7 +9,6 @@ index.html needs no network at all (fonts included):
     {{CARD_TILE}}    assets/card-tile-500.webp  the print's botanical toile cell (tiles seamlessly)
     {{PANEL_MASK}}   assets/panel-scallop.svg   scalloped card silhouette (CSS mask)
     {{FLOURISH}}     assets/flourish.svg        ornamental divider
-    {{QR}}           assets/qr.svg              Google Maps QR from the print card
     {{FONTS}}        @font-face block           card subsets + Vollkorn + La Belle Aurore
 """
 import base64
@@ -39,6 +38,7 @@ GOOGLE_FONTS = [
     ("Vollkorn", "google/Vollkorn-400.sub.woff2", "400 900", "normal"),
     ("Vollkorn", "google/Vollkorn-400i.sub.woff2", "400 900", "italic"),
     ("La Belle Aurore", "google/LaBelleAurore-400.sub.woff2", 400, "normal"),
+    ("Allura", "google/Allura-400.sub.woff2", 400, "normal"),
 ]
 
 
@@ -64,7 +64,6 @@ def main() -> int:
         "{{CARD_TILE}}": data_uri(ROOT / "assets" / "card-tile-500.webp", "image/webp"),
         "{{PANEL_MASK}}": data_uri(ROOT / "assets" / "panel-scallop.svg", "image/svg+xml"),
         "{{FLOURISH}}": data_uri(ROOT / "assets" / "flourish.svg", "image/svg+xml"),
-        "{{QR}}": data_uri(ROOT / "assets" / "qr.svg", "image/svg+xml"),
     }
     for token, uri in tokens.items():
         if token not in html:
