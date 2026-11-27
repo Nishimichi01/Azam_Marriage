@@ -52,3 +52,25 @@ Append-only record of work sessions. Newest entries at the bottom.
 - Built `dist/` (index.html + assets/og.jpg, 365 KB) for an account-level drag-and-drop deploy; served it locally on :8901 and confirmed `/` returns 200 with the real `<title>`.
 
 **Verification gap:** could not see the Netlify dashboard (not signed in in the browser profile) and no deploy event exists, so the live URL is unverified — the user has to trigger the deploy.
+
+## 2026-11-13 — RSVP storage: Google Sheet + CSV against a static Netlify site
+
+**Asked:** can RSVPs be stored so they can be pulled out as a CSV report?
+
+**Decision:** keep the single static file, but split it into one submit path with three delivery channels chosen by `RSVP_CHANNEL`:
+
+- `whatsapp` (default, unchanged) — no storage, guest sends the message.
+- `sheet` — POST to a Google Apps Script `/exec` web app that appends to a Google Sheet and serves the sheet as CSV (`?csv=1&key=…`), plus a totals dashboard.
+- `netlify` — Netlify Forms via a hidden static `<form name="rsvp" data-netlify="true">`; CSV button in the dashboard, 100 submissions/month free.
+
+**Why Google Sheets over Netlify Forms as the recommendation:** no submission cap, CSV is native even if they leave Netlify, and the family can be given view access. Netlify Forms stays as the zero-setup fallback.
+
+**Implementation notes that mattered:**
+- The Apps Script POST must be `mode:"no-cors"` with `Content-Type: text/plain;charset=utf-8` — a *simple* request, no preflight, and `e.postData.contents` still carries the JSON. The response is opaque, so the UI confirmation is optimistic and the WhatsApp link remains the fallback.
+- Netlify Forms needs the form in the **static HTML at deploy time**; a JS-only form is never detected.
+- Repeat replies update the existing row (match on normalised phone, else name) instead of appending duplicates.
+- CSV is emitted with a UTF-8 BOM so Excel reads Malay text correctly.
+
+**Verification:** all three channels exercised in the browser. The sheet channel was POSTed against a local mock server — the captured body was `CT=text/plain;charset=utf-8` and the full JSON payload. Netlify channel captured via a fetch stub: `form-name=rsvp&nama=…&kanak-kanak=0`. WhatsApp channel produced the correct `wa.me` text and hid the duplicate link. Closing/reopening the sheet resets it. `node --check` on the extracted inline script passes.
+
+**Gotcha for future edits of this template:** escaping `\\n` inside a bash heredoc through the tool layer collapses to a real newline and breaks the JS string. Use `var NL = String.fromCharCode(10)` (now in the file) instead of `"\n"` literals.

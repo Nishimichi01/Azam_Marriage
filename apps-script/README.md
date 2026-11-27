@@ -25,13 +25,13 @@ Everything runs on Google's free tier: no server, no database, no monthly submis
    | Who has access | **Anyone** |
 
    Press **Deploy**, authorise the script, and copy the URL ending in **`/exec`**.
-5. Put that URL into the page:
+5. Put that URL into the page — **this is the only line you must change**:
    ```js
-   var RSVP_CHANNEL  = "sheet";
    var RSVP_ENDPOINT = "https://script.google.com/macros/s/AKfy…/exec";
    var RSVP_KEY      = "azam-nazifa-26-12-2026-x7k2";
    ```
-   then rebuild:
+   `RSVP_CHANNEL` is `"auto"`, so filling in the endpoint switches storage on by
+   itself. Then rebuild:
    ```bash
    python src/build.py
    ```
@@ -60,6 +60,23 @@ Jumlah tetamu, Ucapan, Dijemput, Halaman
 
 `Dijemput` is the `?to=` name from the guest's personal link, so you can see which
 invitation they replied to.
+
+## Two ways to install the script — both supported
+
+The script works whether you create it **standalone** (`script.google.com` →
+New project) or **bound** to a spreadsheet (open the sheet → **Extensions → Apps
+Script**). This matters: the `getActiveSpreadsheet()` pattern you'll see in most
+snippets only works in the bound case, and returns `null` in a standalone script —
+which is the usual cause of an "exception" 500 from a web app.
+
+`book_()` tries, in order:
+
+1. `SpreadsheetApp.getActiveSpreadsheet()` — the bound sheet, if there is one
+2. the spreadsheet id stored from a previous run
+3. otherwise creates a new spreadsheet and remembers its id
+
+So a fresh standalone script creates its own sheet on the first RSVP, and a bound
+script writes into the sheet you are already looking at. No configuration needed.
 
 ## Behaviour worth knowing
 

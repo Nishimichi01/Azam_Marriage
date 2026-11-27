@@ -14,7 +14,7 @@
  *       Description : RSVP
  *       Execute as  : Me
  *       Access      : Anyone            ← required, otherwise guests get 401
- *     Press Deploy, authorise the script, and copy the **/exec** URL.
+ *     Press Deploy, authorise the script, and copy the URL ending in "/exec".
  *  5. Put that URL into RSVP_ENDPOINT in index.html and set
  *     RSVP_CHANNEL = "sheet". Rebuild with `python src/build.py`.
  *
@@ -46,6 +46,17 @@ function doPost(e) {
 
   try {
     var body = parse_(e);
+
+    // accept both this page's field names and the shorter { name, attending, pax } style
+    if (body.nama === undefined) body.nama = body.name;
+    if (body.telefon === undefined) body.telefon = body.phone;
+    if (body.ucapan === undefined) body.ucapan = body.message;
+    if (body.status === undefined) {
+      var a = body.attending;
+      body.status = (a === true || a === 'true' || a === 'hadir' || a === 1 || a === '1') ? 'hadir' : 'tidak';
+    }
+    if (body.dewasa === undefined && body.pax !== undefined) body.dewasa = body.pax;
+
     if (SECRET && body.key !== SECRET) return json_({ ok: false, error: 'bad key' });
     if (String(body.honeypot || '').trim()) return json_({ ok: true, skipped: 'bot' });
 
@@ -133,11 +144,18 @@ function doGet(e) {
 function book_() {
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty('SPREADSHEET_ID');
-  var ss;
+  var ss = null;
 
-  if (id) {
-    ss = SpreadsheetApp.openById(id);
-  } else {
+  // 1. bound script (Extensions > Apps Script from inside a sheet) — use that sheet
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (err) { ss = null; }
+
+  // 2. already created by a previous run
+  if (!ss && id) {
+    try { ss = SpreadsheetApp.openById(id); } catch (err) { ss = null; }
+  }
+
+  // 3. standalone script, first run — create the spreadsheet and remember it
+  if (!ss) {
     ss = SpreadsheetApp.create(TITLE);
     props.setProperty('SPREADSHEET_ID', ss.getId());
   }
