@@ -1331,7 +1331,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     if (RSVP_CHANNEL !== "sheet" || !RSVP_ENDPOINT) { renderWishes(); return; }
     gbLoading = true;
     renderWishes();
-    fetch(RSVP_ENDPOINT + "?csv=1&key=" + encodeURIComponent(RSVP_KEY), { cache: "no-store" })
+    fetch(RSVP_ENDPOINT + "?wishes=1&key=" + encodeURIComponent(RSVP_KEY), { cache: "no-store" })
       .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.text(); })
       .then(function (txt) { wishes = parseWishes(txt); gbDone = true; })
       .catch(function () { /* offline / cold start: keep the empty state */ })

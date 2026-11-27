@@ -8,9 +8,13 @@
 //   GET                          -> dashboard: totals + CSV link
 //   GET  ?csv=1&key=SECRET       -> the whole sheet as CSV
 //
-// Rows go into the "RSVP" tab of the spreadsheet whose id sits in the
+// RSVP replies are appended to the "RSVP" tab; guestbook wishes to the
+// "Buku Tetamu" tab. Both live in the spreadsheet whose id sits in the
 // SPREADSHEET_ID script property (a configured id wins; otherwise a bound
 // script uses the sheet it lives in).
+//
+//   GET  ?csv=1&key=SECRET      -> RSVP tab as CSV
+//   GET  ?wishes=1&key=SECRET   -> Buku Tetamu tab as CSV (the page reads this)
 //
 // To publish a change: paste this file, Save, then
 // Deploy > Manage deployments > pencil > Version: New version > Deploy.
@@ -20,7 +24,8 @@
 // ships with it - so treat the guest list as readable by anyone holding the
 // invitation link.
 
-var SHEET_NAME = 'RSVP';
+var SHEET_NAME = 'RSVP';          // RSVP replies only
+var WISH_SHEET = 'Buku Tetamu';   // guestbook wishes only
 var SECRET     = '$DanishVb09';                 // must match RSVP_KEY in index.html
 var TIMEZONE   = 'Asia/Kuala_Lumpur';
 var TITLE      = 'RSVP - Walimatul Urus Imas & Azam';
@@ -78,7 +83,7 @@ function doPost(e) {
     if (phone === GUESTBOOK_MARK) phone = '';
 
     var book  = book_();
-    var sheet = book.sh;
+    var sheet = isWish ? wishSheet_(book.ss) : book.sh;
     var row = [
       new Date(),
       date_(body.masa),
@@ -114,21 +119,25 @@ function doPost(e) {
 function doGet(e) {
   var p = (e && e.parameter) || {};
 
-  if (p.csv || p.format === 'csv') {
+  var wantsWishes = p.wishes || p.csv === 'wishes';
+  if (wantsWishes || p.csv || p.format === 'csv') {
     if (SECRET && p.key !== SECRET) return text_('Unauthorized', 'text/plain');
-    var file = TITLE.replace(/[^A-Za-z0-9]+/g, '-') + '-' +
-               Utilities.formatDate(new Date(), TIMEZONE, 'yyyyMMdd-HHmm') + '.csv';
-    return ContentService.createTextOutput(csv_())
+    var sheet = wantsWishes ? wishSheet_(book_().ss) : book_().sh;
+    return ContentService.createTextOutput(csv_(sheet))
       .setMimeType(ContentService.MimeType.CSV);
   }
 
-  var rows = book_().sh.getDataRange().getValues().slice(1);
-  var hadir = 0, tidak = 0, orang = 0, kanak = 0, ucapan = 0;
+  var book = book_();
+  var rows = book.sh.getDataRange().getValues().slice(1)
+    .filter(function (r) { return r[4] !== 'Ucapan'; });   // legacy wishes live elsewhere
+  var hadir = 0, tidak = 0, orang = 0, kanak = 0;
   rows.forEach(function (r) {
     if (r[4] === 'Hadir') { hadir++; orang += num_(r[5], 0); kanak += num_(r[6], 0); }
-    else if (r[4] === 'Ucapan') { ucapan++; }
     else if (r[4]) { tidak++; }
   });
+  var wishRows = wishSheet_(book.ss).getDataRange().getValues().slice(1)
+    .filter(function (r) { return String(r[8] || '').trim(); });
+  var ucapan = wishRows.length;
 
   var link = ScriptApp.getService().getUrl() + '?csv=1&key=' + encodeURIComponent(SECRET);
   return HtmlService.createHtmlOutput(
@@ -181,17 +190,7 @@ function book_() {
     props.setProperty('SPREADSHEET_ID', ss.getId());
   }
 
-  var sh = ss.getSheetByName(SHEET_NAME);
-  if (!sh) sh = ss.insertSheet(SHEET_NAME);
-
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS);
-    sh.getRange(1, 1, 1, HEADERS.length)
-      .setFontWeight('bold').setBackground('#78804b').setFontColor('#ffffff');
-    sh.setFrozenRows(1);
-    sh.setColumnWidths(1, HEADERS.length, 150);
-    sh.setColumnWidth(9, 320);
-  }
+  var sh = ensure_(ss, SHEET_NAME);
 
   // Phones must stay text: Sheets parses "0123456789" as a number and drops the
   // leading zero, which silently corrupts every Malaysian number on export.
@@ -202,6 +201,39 @@ function book_() {
   if (first && first.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(first);
 
   return { ss: ss, sh: sh };
+}
+
+function wishSheet_(ss) {
+  return ensure_(ss, WISH_SHEET);
+}
+
+// Creates the tab (and its header row) the first time it is needed.
+function ensure_(ss, name) {
+  var sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+
+  // A tab that already holds a formula (typically a =QUERY view) cannot be used as
+  // storage: the rows would be appended under the view and the CSV would come out
+  // with the wrong columns. Ask for a clean tab instead of corrupting it.
+  var formula = '';
+  try {
+    var cell = sh.getRange(1, 1);
+    formula = String((cell.getFormula && cell.getFormula()) || '');
+  } catch (err) { formula = ''; }
+  if (formula.charAt(0) === '=') {
+    throw new Error('"' + name + '" has a formula in A1. Clear the whole tab ' +
+                    '(select all, delete) so the guestbook can store its rows there.');
+  }
+
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(HEADERS);
+    sh.getRange(1, 1, 1, HEADERS.length)
+      .setFontWeight('bold').setBackground('#78804b').setFontColor('#ffffff');
+    sh.setFrozenRows(1);
+    sh.setColumnWidths(1, HEADERS.length, 150);
+    sh.setColumnWidth(9, 320);
+  }
+  return sh;
 }
 
 function sheetText_(sh, column) {
@@ -231,8 +263,8 @@ function find_(sheet, nama, phone) {
   return 0;
 }
 
-function csv_() {
-  var values = book_().sh.getDataRange().getValues();
+function csv_(sh) {
+  var values = sh.getDataRange().getValues();
   var lines = values.map(function (row) {
     return row.map(function (cell) {
       var s = (cell instanceof Date)
@@ -273,6 +305,23 @@ function json_(obj) {
 function text_(body, mime) {
   return ContentService.createTextOutput(body)
     .setMimeType(mime === 'text/plain' ? ContentService.MimeType.TEXT : ContentService.MimeType.JSON);
+}
+
+// Run once from the editor: move wish rows that were written into the RSVP tab
+// (before the guestbook got its own tab) over to "Buku Tetamu".
+function migrateWishes() {
+  var book = book_();
+  var src = book.sh;
+  var dst = wishSheet_(book.ss);
+  var values = src.getDataRange().getValues();
+  var moved = 0;
+  for (var i = values.length - 1; i >= 1; i--) {          // bottom-up, so indexes stay valid
+    if (values[i][4] !== 'Ucapan') continue;
+    dst.appendRow(values[i]);
+    src.deleteRow(i + 1);
+    moved++;
+  }
+  Logger.log('Moved ' + moved + ' wish row(s) to "' + WISH_SHEET + '".');
 }
 
 // Optional: run this once from the editor to create the sheet + headers early.

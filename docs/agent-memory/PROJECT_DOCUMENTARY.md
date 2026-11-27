@@ -18,6 +18,10 @@ Muddin bin Ishak**, Saturday 26 December 2026, Masjid Prima Saujana, Kajang.
 
 ## Architecture
 
+Two tabs, one web app: `RSVP` holds attendance rows, `Buku Tetamu` holds wishes; the page reads
+`?wishes=1` for the guestbook and the dashboard counts both. `ensure_()` creates a tab with its
+header row and refuses a tab whose A1 is a formula. `migrateWishes()` moves pre-split wishes.
+
 ```
 src/index.template.html  HTML + CSS + one IIFE of vanilla JS. No framework, no runtime deps.
 src/build.py             replaces {{CARD_TILE}} {{PANEL_MASK}} {{FLOURISH}} {{QR}} and

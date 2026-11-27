@@ -339,3 +339,22 @@ Prototype only — `index.html` and `src/` untouched.
 - Side-by-side against `ref/refcard/page0.png` at the same panel size: caps/date/venue widths within ~3 %, names within ~8 %, `&` enlarged from 22 px to 33 px ink to match the print's weight.
 
 **Note:** the ampersand still reads lighter than the print's, because the PDF draws it as vector art rather than the Daydream glyph; matching it exactly would need that vector extracted the way the flourish and QR were.
+
+## 2026-11-27 — Guestbook split into its own "Buku Tetamu" tab, with migration and a formula guard
+
+**Asked:** a guestbook wish was appearing in both the `RSVP` and `Buku Tetamu` tabs; they want the guestbook to store only in `Buku Tetamu`, and RSVP only in `RSVP`.
+
+**Why it looked duplicated:** `Buku Tetamu` was a `=QUERY` view over `RSVP` (the view I had suggested), so one write showed up twice. Real separation needed two stores.
+
+**Changes**
+- `apps-script/Code.gs`: `WISH_SHEET = 'Buku Tetamu'`; `doPost` routes `status:"ucapan"` to the wishes tab and everything else to `RSVP`; `ensure_(ss, name)` bootstraps either tab with the shared header row; `wishSheet_()`; `csv_(sh)` takes the sheet; `?wishes=1&key=…` serves the wishes CSV, `?csv=1` stays RSVP-only; dashboard counts wishes from their tab (`Ucapan buku tetamu`) and excludes any legacy `Ucapan` rows left in `RSVP`.
+- Guard: `ensure_()` throws if A1 of the tab holds a formula — a `=QUERY` view must not become storage (rows would land under the view and corrupt the CSV).
+- `migrateWishes()`: bottom-up pass that copies `Status = Ucapan` rows from `RSVP` to `Buku Tetamu` and deletes them from `RSVP`.
+- Page: `loadWishes()` now fetches `?wishes=1&key=…`.
+- Tests: 66 pass, including "wish does NOT touch the RSVP tab", "?wishes=1 serves the wishes tab", "?csv=1 does not leak wishes", the formula guard, and the migration.
+
+**Verification**
+- Mock endpoint serves two feeds; the page against it shows exactly the two wish rows (the `Ucapan` one and the legacy `Hadir 0/0` one) and none of the RSVP notes; the UJIAN row stays hidden.
+- `node --check` clean; `dist/` byte-identical.
+
+**Follow-ups for the client:** clear the `=QUERY` formula out of `Buku Tetamu` before deploying (otherwise the new guard refuses to write), paste `Code.gs`, New version deploy, run `migrateWishes`, then publish the new `index.html`.

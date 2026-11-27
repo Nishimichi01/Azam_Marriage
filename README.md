@@ -257,8 +257,23 @@ Setup is in [`apps-script/README.md`](apps-script/README.md). Columns:
 `Masa (server), Masa (pelawat), Nama, Telefon, Status, Dewasa, Kanak-kanak, Jumlah tetamu,
 Ucapan, Dijemput, Halaman` — UTF-8 with BOM so Excel opens it cleanly.
 
-**Guestbook rows** are written with `Status = Ucapan`, `Telefon` blank and 0 guests, so they
-never disturb the attendance totals. They are appended, never merged into an RSVP row.
+**Two tabs, one endpoint:**
+
+| Tab | Holds | Served as |
+|---|---|---|
+| `RSVP` | RSVP replies (`Hadir` / `Tidak Hadir`) | `<exec>?csv=1&key=…` |
+| `Buku Tetamu` | guestbook wishes only (`Ucapan`) | `<exec>?wishes=1&key=…` (the page reads this) |
+
+Both tabs are created with their header row on first use. `Buku Tetamu` must be a **plain
+tab** — the script refuses to write into it if A1 holds a formula (e.g. a `=QUERY` view),
+because the rows would land under the view.
+
+Moving old data: run `migrateWishes` once from the Apps Script editor — it copies every
+`Status = Ucapan` row out of `RSVP` into `Buku Tetamu` and deletes it from `RSVP`.
+
+**Guestbook rows** go to the `Buku Tetamu` tab with `Status = Ucapan`, `Telefon` blank and
+0 guests, so they never disturb the attendance totals. They are appended, never merged into an
+RSVP row.
 `apps-script/Code.gs` handles this (see `isWish`), and its dashboard shows a separate
 "Ucapan buku tetamu" count.
 
@@ -292,9 +307,8 @@ No. RSVPs and wishes live in the **same** tab: a wish is a row with `Status = Uc
 phone and 0 guests, and the guestbook reads the same CSV, filtering on the `Ucapan` column. If
 you want a tidy read-only view, add an extra tab (the script never touches it):
 
-```
-=QUERY(RSVP!A2:K, "select C, I, A where E = 'Ucapan' order by A desc label C 'Nama', I 'Ucapan', A 'Masa'", 0)
-```
+(No longer needed — since the split, `Buku Tetamu` *is* the wish store. A `=QUERY` view can
+only live in a different tab, pointing at `Buku Tetamu` now.)
 
 (Google Sheets uses `;` instead of `,` in some locales.) Or use **Data → Create a filter view**
 on `Status = Ucapan`.

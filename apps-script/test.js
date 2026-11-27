@@ -21,7 +21,7 @@ function makeSheet(name) {
   const rows = [];
   const formats = {};           // column index -> number format
   const asText = (col) => formats[col] === '@';
-  return {
+  const sheet = {
     name,
     _rows: rows,
     _formats: formats,
@@ -51,6 +51,10 @@ function makeSheet(name) {
         }
         return out;
       },
+      getFormula: () => {
+        const f = sheet._formula;
+        return f && f.r === r && f.c === c ? f.v : '';
+      },
       setFontWeight: () => ({ setBackground: () => ({ setFontColor: () => {} }) }),
       setBackground: () => ({ setFontColor: () => {} }),
       setFontColor: () => {},
@@ -61,10 +65,13 @@ function makeSheet(name) {
       }
     }),
     getDataRange: () => ({ getValues: () => rows.map((r) => r.slice()) }),
+    deleteRow: (n) => { rows.splice(n - 1, 1); },
+    setFormula: (r, c, v) => { sheet._formula = { r, c, v }; },
     setFrozenRows: () => {},
     setColumnWidth: () => {},
     setColumnWidths: () => {}
   };
+  return sheet;
 }
 
 function makeSpreadsheet(title, id) {
@@ -322,15 +329,20 @@ check('round-trips the quoted name',
       parsed.some((r) => r[2] === 'Aminah, "Kak Min"'), 'name not parsed back');
 
 console.log('');
-console.log('guestbook wishes (status "ucapan")');
-const before = sh.getLastRow();
+console.log('guestbook wishes go to their own tab');
+const rsvpBefore = sh.getLastRow();
 const hadirBefore = sh._rows.slice(1).filter((r) => r[4] === 'Hadir').length;
 const gb1 = post({ key: SECRET, nama: 'Nurul Aisyah', telefon: '0000000000', status: 'ucapan',
                    dewasa: 0, kanak_kanak: 0, ucapan: 'Semoga bahagia hingga ke jannah!' });
 check('wish accepted', gb1.json.ok === true, gb1.body);
-check('wish APPENDS instead of overwriting the same-name RSVP row',
-      sh.getLastRow() === before + 1, 'rows ' + before + ' -> ' + sh.getLastRow());
-const wishRow = sh._rows[sh.getLastRow() - 1];
+
+const wishSh = ss.getSheetByName('Buku Tetamu');
+check('the "Buku Tetamu" tab is created', !!wishSh, ss.getSheets().map((x) => x.name).join(','));
+check('wish does NOT touch the RSVP tab', sh.getLastRow() === rsvpBefore,
+      'rows ' + rsvpBefore + ' -> ' + sh.getLastRow());
+check('wish is written to "Buku Tetamu"', wishSh.getLastRow() === 2, wishSh.getLastRow());
+
+const wishRow = wishSh._rows[1];
 check('stored with status Ucapan', wishRow[4] === 'Ucapan', wishRow[4]);
 check('wish row carries no guests', wishRow[5] === 0 && wishRow[7] === 0, wishRow[5] + '/' + wishRow[7]);
 check('marker phone is blanked', wishRow[3] === '', JSON.stringify(wishRow[3]));
@@ -339,7 +351,18 @@ check('wish text stored', wishRow[8] === 'Semoga bahagia hingga ke jannah!', wis
 const gb2 = post({ key: SECRET, nama: 'Nurul Aisyah', telefon: '0000000000', status: 'ucapan',
                    ucapan: 'Second wish from the same guest' });
 check('a second wish from the same person also appends',
-      gb2.json.ok === true && sh.getLastRow() === before + 2, 'rows ' + sh.getLastRow());
+      gb2.json.ok === true && wishSh.getLastRow() === 3, 'rows ' + wishSh.getLastRow());
+
+console.log('');
+console.log('two separate CSV feeds');
+const wishCsv = ctx.doGet({ parameter: { wishes: '1', key: SECRET } }).getContent();
+const rsvpCsv = ctx.doGet({ parameter: { csv: '1', key: SECRET } }).getContent();
+check('?wishes=1 serves the wishes tab', wishCsv.indexOf('Second wish from the same guest') > -1);
+check('?csv=1 does not leak wishes', rsvpCsv.indexOf('Second wish from the same guest') === -1);
+check('?wishes=1 is refused without the key',
+      ctx.doGet({ parameter: { wishes: '1', key: 'wrong' } }).getContent() === 'Unauthorized');
+check('wishes CSV carries the same header row',
+      wishCsv.split(CR + LF)[0].indexOf('Nama,Telefon,Status') > -1);
 
 console.log('');
 console.log('dashboard separates wishes from attendance');
@@ -356,9 +379,29 @@ check('wishes are not counted as hadir',
       'hadir=' + dashNum(dash2, 'Hadir (bilangan jawapan)') + ' expected ' + hadirBefore);
 check('dashboard counts the two wishes',
       dashNum(dash2, 'Ucapan buku tetamu') === 2, dashNum(dash2, 'Ucapan buku tetamu'));
-check('CSV still exposes the wish text',
-      ctx.doGet({ parameter: { csv: '1', key: SECRET } }).getContent()
-        .indexOf('Second wish from the same guest') > -1);
+
+console.log('');
+console.log('a tab holding a =QUERY view is refused as storage');
+const viewTab = ss.getSheetByName('Buku Tetamu');
+viewTab.setFormula(1, 1, '=QUERY(RSVP!A2:K, "select C, I", 0)');
+let guarded = null;
+try { ctx.wishSheet_(ss); } catch (e) { guarded = e; }
+check('explains the formula problem', String(guarded).indexOf('has a formula in A1') > -1, String(guarded));
+viewTab.setFormula(1, 1, '');
+
+console.log('');
+console.log('migrateWishes() moves pre-split wishes out of the RSVP tab');
+sh._rows.push(['2026-01-01 10:00', '', 'Old Guest', '', 'Ucapan', 0, 0, 0,
+               'Wish written before the split', '', '']);
+const rsvpWithLegacy = sh.getLastRow();
+ctx.migrateWishes();
+check('the legacy row left the RSVP tab', sh.getLastRow() === rsvpWithLegacy - 1,
+      'rows ' + rsvpWithLegacy + ' -> ' + sh.getLastRow());
+check('and landed in "Buku Tetamu"',
+      wishSh._rows[wishSh.getLastRow() - 1][8] === 'Wish written before the split',
+      JSON.stringify(wishSh._rows[wishSh.getLastRow() - 1][8]));
+check('dashboard now counts three wishes',
+      dashNum(ctx.doGet({ parameter: {} }).getContent(), 'Ucapan buku tetamu') === 3);
 
 console.log('');
 console.log('bound-script mode (Extensions > Apps Script inside a sheet)');
