@@ -4,6 +4,10 @@ video_20261112_123720.mp4
 # Derived reference renders (regenerable from the PDF + video)
 ref/
 
+# Local dev scratch (mock endpoint, QA screenshots, proof renders)
+work/
+src/__pycache__/
+
 # OS noise
 Thumbs.db
 .DS_Store

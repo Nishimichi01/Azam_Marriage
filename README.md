@@ -1,136 +1,186 @@
-# Walimatul Urus · Azam & Nazifa — online invitation
+# Walimatul Urus · Imas & Azam — online invitation
 
 A single-file, mobile-first wedding e-invitation. The design is rebuilt from the couple's
-printed card (`Kad Kahwin - Azam & Nazifa.pdf`); the motion and the interaction model follow
-the sample recording (`video_20261112_123720.mp4`).
+**new printed card** (`Reference/Jemputan Imas&Azam-1 (1).pdf`): the mocha botanical toile,
+the scalloped cream panel, and the card's own typefaces, colours and detail order.
 
 ```
-index.html                  ← the invitation. Self-contained (fonts are the only external request)
-assets/lily.webp            ← the pink lily, extracted from the PDF (real transparency)
-assets/branch.webp          ← the bud branch, extracted from the PDF
-assets/og.jpg               ← 1200×630 share preview
-src/index.template.html     ← editable source (assets referenced as {{LILY}} / {{BRANCH}})
-src/build.py                ← inlines the images and writes index.html
-src/plaid.uri               ← the exact plaid tile used as a CSS background
-ref/                        ← reference renders: PDF pages, video frames, extracted artwork
+index.html                  ← the invitation. Self-contained: images, panel mask and every
+                              font are inlined; only YouTube (the song) and Google Sheets
+                              (the guestbook) are fetched at runtime
+src/index.template.html     ← editable source
+src/build.py                ← inlines assets/fonts and writes index.html
+assets/card-tile-500.webp   ← the print's botanical toile cell (tiles seamlessly)
+assets/panel-scallop.svg    ← the scalloped panel silhouette, traced from the card
+assets/flourish.svg         ← the card's ornamental divider, vector-traced
+assets/qr.svg               ← the card's location QR (decodes to the Google Maps pin)
+assets/fonts/web/*.woff2    ← the card's 9 embedded typefaces, re-cmapped for the web
+assets/fonts/google/*.woff2 ← Vollkorn + La Belle Aurore (OFL), subsetted
+assets/og.jpg               ← 1200×630 WhatsApp/Facebook preview
+ref/refcard/DESIGN-SPEC.md  ← every measurement, colour and font finding behind the rebuild
+Reference/                  ← the client's card PDF + reference links
+apps-script/                ← the Google Sheet endpoint for RSVP + guestbook
+docs/agent-memory/          ← notes for future work sessions
 ```
 
 Rebuild after editing the template:
 
 ```bash
-python src/build.py
+python src/build.py        # → index.html (≈470 KB, everything inlined)
 ```
 
 ## Previewing it on your own computer
 
-**Easiest — no tools at all:** double-click **`index.html`**. It opens in your browser and
-works, because everything (fonts excepted) is inside that one file.
+**Easiest:** double-click **`index.html`**. Everything except the song and the live guestbook
+is inside that one file, so it renders.
 
-**Recommended — double-click `run-locally.bat`.** It starts a tiny web server on
-`http://localhost:8000`, opens your browser, and stops when you close the black window.
-Use this one for testing, because a real address (`http://…`) is what the invitation sees
-when it is published — the per-guest links (`?to=Nama`) and copy-to-clipboard behave
-differently from a `file:///…` page.
-
-The launcher prints two addresses:
-
-* `http://localhost:8000` — this computer
-* `http://<computer-name>:8000` — the same page from a phone on the same Wi-Fi (Windows may
-  ask once about allowing Python through the firewall; allow it for *private* networks).
-  If the name does not resolve, use the IPv4 address from `ipconfig`.
-
-Closing the black window stops the server. If the window flashes and disappears, Python
-is not installed — just double-click `index.html` instead.
-
-Command line, if you prefer:
-
-```bash
-python -m http.server 8000     # → http://localhost:8000
-```
-
-**On your phone, over Wi-Fi:** run the server, then visit
-`http://<your-PC-IP>:8000` — find the IP with `ipconfig` (look for *IPv4 Address*). Add
-`--bind 0.0.0.0` if the phone cannot connect. This is the honest way to check the real
-touch feel before sending the link to anyone.
+**Recommended:** double-click **`run-locally.bat`** → `http://localhost:8000`. Use this for
+testing: a real `http://` address is what the invitation sees once published, so the per-guest
+links (`?to=Nama`), the guestbook fetch and copy-to-clipboard behave correctly.
 
 ---
 
 ## 1. How faithful is it to the card?
 
-The card is a vector PDF, so the design was lifted from it rather than eyeballed:
+The card is a vector A6 PDF, so the design was lifted from it, not eyeballed. Every number
+below is in `ref/refcard/DESIGN-SPEC.md`.
 
-| Element | Source in the PDF | Used in the page |
+| Element | On the print card | In the page |
 |---|---|---|
-| Plaid | 93.1 pt square repeating unit: 1 white 7.495 pt thread + 1 blush 3.17 pt thread + 4 blush 1.056 pt threads, each direction | `src/plaid.uri`, tiled at `22.2vw` so the unit is the same share of the width as on the card |
-| Olive | `rgb(120,128,75)` | `--olive #78804B` |
-| Blush | `rgb(197,168,158)` | `--blush #C5A89E` |
-| Cream panel | `rgb(234,223,217)` at 18.6 % / 18.8 % insets | `--paper #EADFD9`, panel sized `62.8vw × 62.4vh` |
-| Sage page | `rgb(223,224,188)` | `--sage #DFE0BC` |
-| Ink / body | `#4D2E1A` / `#2E361D` | `--ink`, `--soft` |
-| Lily + branch artwork | 2 embedded images with soft masks | pulled out at full resolution, `assets/*.webp` |
-| Type | Pinyon Script, Lora, TheSeasons | Pinyon Script, Lora, Cormorant Garamond (free stand-in for TheSeasons) |
+| Botanical toile | one 118.4 pt motif cell painted 17× on a lattice rotated 25.732° | `assets/card-tile-500.webp`, tiled at `175px` (220px ≥700 px wide) |
+| Panel cream | `#F9F7F5` (CMYK 6/6/8/0) | `--panel` |
+| Type brown | `#785D41` | `--brown` |
+| Maroon accent (`DIS` / `2026`) | `#4D0F17` | `--accent` |
+| Panel shape | 48 shallow scallops (14 top, 12 sides, 10 bottom) on an arch-topped rect; shadow σ 8 pt `#6E5039` @ .66 | `assets/panel-scallop.svg` as a CSS `mask`, shadow on a wrapper |
+| Cover script | MoonTime 49.96 pt | `--script` (MoonTime, subsetted) |
+| Cover ampersand | Daydream 37.97 pt | `--amp` (Daydream) |
+| Cover small caps | Vollkorn 8.38 pt, tracking .164 em | Vollkorn |
+| Inside serif | TheSeasons 7.29–21.81 pt, tracking .067 em | `--card` (TheSeasons Reg/Bd/BdIt) |
+| "dengan pasangannya" | Brittany Signature 9.53 pt | `--hand` |
+| Detail order | greeting → hosts → menjemput → guest line → puteri kami → names → flourish → date/address/time → QR → contacts | identical, in the same order |
+| QR | vector QR of `maps.app.goo.gl/TxpW6quXn25QASN97` | same QR, clickable |
 
-Everything else — wording, names, date, venue, contact — is copied verbatim from the card.
+**Two deliberate departures, both required by the brief:**
 
-## 2. What it does (from the sample video)
+1. **The cover shows initials only** (`MENUJU SATU · I & A · SABTU | 26.12.2026 · venue`),
+   not the full names — tapping it opens the invitation.
+2. **Type is enlarged for the screen.** The print is A6, so body copy is 7.29 pt. The page
+   keeps the card's size *ratios* but sets body copy at ~15 px; past that point the card's
+   single page no longer fits a phone, which is why the interior is one tall scalloped sheet
+   instead of an A6 page.
 
-* **Cover** — the printed cover, tappable. The round seal pulses, then on tap it scales up and
-  dissolves while the cream panel grows to fill the screen and turns sage, exactly like the
-  sample's "seal → blurred-background-to-sharp" opening.
-* **Greeting** — every line fades up out of a blur, staggered (~80 ms apart), the way the
-  reference reveals "Majlis Perkahwinan → names → date".
-* **Scroll reveals** — the same blur-and-lift on every block as it enters the view.
-* **Bottom bar** — icon + label, three items maximum: `Lagu`, `RSVP`, `Lokasi`.
-* **Frosted card** — the venue block sits on a translucent paper card with a backdrop blur,
-  like the reference's glass schedule card.
-* **Falling petals** — lily petals drifting down, not the reference's roses.
-* **Extras** — live countdown, add-to-calendar, Maps/Waze, WhatsApp RSVP sheet, share, and
-  per-guest greeting via `?to=`.
+Because the card's fonts are Canva **subsets** (MoonTime only carries `A I a m s z`), they are
+used only for the exact strings on the card. All new UI copy uses Vollkorn — the card's own
+secondary typeface — and the guestbook messages use La Belle Aurore.
 
-## 3. Editing
+## 2. What the invitation does
 
-All copy lives in plain HTML in `src/index.template.html` (search for the Malay text).
-The few settings are at the top of the `<script>` block:
+* **Cover — initials only.** The scalloped panel floats on the toile. Tap/Enter: the panel
+  lifts and dissolves while the card's inside page fades in line by line (blur + lift, 65 ms
+  stagger). Nothing behind the cover is pre-revealed.
+* **The card's interior**, top to bottom in the card's order, closing with the QR, Maps/Waze/
+  calendar buttons and the four `UNTUK DIHUBUNGI` numbers (each a `wa.me` link).
+* **Countdown** to 26 December 2026, 11:00 (+08:00), then a "majlis sedang/telah berlangsung" line.
+* **Senarai Hadiah** — the gift list section (see §3).
+* **RSVP** — the existing Google Sheet flow, restyled.
+* **Sign Our Guestbook** — wishes carousel + form (see §4).
+* **Bottom bar** — `RSVP · Hadiah · Lagu` (music toggle; label flips to `Senyap` while playing).
+* **Personal greeting** — `index.html?to=Encik%20Ahmad` adds `KEPADA / Encik Ahmad` to the cover
+  and records who was invited in the sheet.
+* Reduced motion is respected: no reveals, no shimmer, instant open.
+
+## 3. The gift list (hadiah)
+
+`#hadiah` explains that presence is enough, then opens the couple's Google Sheet — the list of
+55 suggested gifts in 9 categories, with a checkbox per row so two guests don't buy the same
+thing. Edit the link in one place:
 
 ```js
-var SONG        = "";                  // ← MP3 URL here. Empty = the Lagu button stays hidden
-var MUSIC_VOL   = 0.55;
-var WA_NUMBER   = "60175707840";       // WhatsApp for RSVP + contact
-var EVENT_START = "2026-12-26T11:00:00+08:00";
-var EVENT_END   = "2026-12-26T15:00:00+08:00";
+var GIFT_SHEET = "https://docs.google.com/spreadsheets/d/1VxoHAGpd_y6fGH3YPTAJIpBUNGNbNLHegU3TtRdWJM0/edit?usp=sharing";
 ```
 
-Other places to touch:
+The button must point at a sheet shared as **"Anyone with the link → Viewer"** (or Editor if
+guests should be able to tick boxes). The eight categories listed under the button are static
+text in `#hadiah` — update them if the sheet's tabs change.
 
-* **Atur cara / tentative** — the `<!-- EDIT -->` block in the `#tentatif` section. The times
-  currently shown are a sensible default, **please confirm them** with the family/masjid.
-* **Gallery** — not included; there are no photographs yet. Say the word and a photo section
-  will be added (lazy-loaded, swipeable).
-* **Maps / Waze / calendar links** — plain `<a href>` in `#lokasi`.
-* **Contact** — the olive band at the bottom.
+## 4. Sign Our Guestbook
 
-### Adding the song (when you're ready)
+Modelled on the reference invitation in `Reference/Link for reference.txt`
+(aliveinvite.com/hazimxdina): one wish at a time in a handwritten face, the guest's name
+tracked in small caps, dot navigation, `lihat semua ucapan` opening a full-screen sheet, then
+the form (`Nama anda`, `Mesej`, `Ucapan Anda`).
 
-1. Put the MP3 next to `index.html` (e.g. `lagu.mp3`), or use any direct-file URL.
-2. Set `var SONG = "lagu.mp3";`
-3. The `Lagu` button appears in the bottom bar; playback starts on the cover tap (browsers
-   block sound before a gesture) and the button toggles it.
+* **Reading** — wishes come from the `Ucapan` column of the RSVP sheet
+  (`<exec URL>?csv=1&key=…`, which Google serves with `Access-Control-Allow-Origin: *`).
+  Newest first, up to 8 in the carousel; `lihat semua ucapan` shows every one. The couple's
+  `UJIAN…` / `DIAG…` test rows are filtered out.
+* **Writing** — the form POSTs `{ status: "ucapan", ucapan: "<message>" }` to the same Apps
+  Script endpoint, and the wish appears immediately (optimistic), then persists.
+* Wishes are **not** counted as attending guests (see §6).
+* If the endpoint is unreachable, the page still works: the wish is shown locally and an
+  error explains that it wasn't saved.
 
-Use audio you have the right to use — a licensed/royalty-free track or your own recording.
+## 5. The song
 
-### Personal greeting per guest
+The song is the client's YouTube link — **Banda Neira · Sampai Jadi Debu (Peaceful Piano)**,
+`https://youtu.be/9CHAP_Sdc9A`.
 
-`index.html?to=Encik%20Ahmad%20bin%20Ali` prints
+```js
+var YT_ID      = "9CHAP_Sdc9A";
+var YT_START   = 115;   // 1:55 — start here, and loop back here
+var MUSIC_VOL  = 55;
+```
 
-> KEPADA
-> *Encik Ahmad bin Ali*
+How it works (the same technique the kadkahwinmy.com-style invitations use):
 
-on the cover. Without the parameter the line simply doesn't appear. Build one link per guest
-(or per family) — it's the usual way these invitations get sent in WhatsApp groups.
+* A **hidden** YouTube player: a normal 366×206 iframe parked entirely below the viewport
+  (`bottom:-320px`, `pointer-events:none`) — the same trick the kadkahwinmy.com templates use
+  (they park a full-size player off-screen too). No visible video, no controls, no branding.
+* The **YouTube IFrame API** seeks to `YT_START` and plays. On `ENDED` it seeks back to
+  `YT_START` and plays again — so it loops from 1:55 forever, not from 0:00. (The reference
+  template only seeks on open and never loops; this page fixes that.)
+* Browsers block sound before a user gesture, so playback starts on the **cover tap**
+  (`unMute()` + `playVideo()` inside the click handler). If the browser still refuses
+  (iOS Low Power Mode), it retries on the next touch, and the `Lagu` button in the bottom bar
+  is a manual fallback that also pauses/resumes.
 
-## 4. Publishing on Netlify
+> The song is streamed from YouTube, so it needs a connection. Nothing is downloaded into the
+> repo. If the video is ever taken down or made non-embeddable, the button simply reports
+> "Lagu latar tidak dapat dimainkan" and the invitation keeps working.
 
-The repo already carries the two things Netlify needs: `index.html` at the **root**, and a
+## 6. Editing
+
+All copy is plain HTML in `src/index.template.html`. The settings are at the top of the
+`<script>` block:
+
+```js
+var YT_ID = "9CHAP_Sdc9A";               // the song
+var YT_START = 115;                      // 1:55
+var MAPS = "https://maps.app.goo.gl/…";  // (also hard-coded in the QR <a href>)
+var GIFT_SHEET = "https://docs.google.com/spreadsheets/d/…";
+var WA_NUMBER = "60175707840";           // WhatsApp fallback
+var EVENT_START = "2026-12-26T11:00:00+08:00";
+var EVENT_END   = "2026-12-26T16:00:00+08:00";
+
+var RSVP_CHANNEL  = "auto";              // "auto" | "sheet" | "netlify" | "whatsapp"
+var RSVP_ENDPOINT = "https://script.google.com/macros/s/…/exec";
+var RSVP_KEY      = "…";                 // must equal SECRET in apps-script/Code.gs
+```
+
+Other things worth knowing:
+
+* **Names / date / venue / phone numbers** are in the `.sheet` hero block — keep the card's
+  order.
+* **The flourish, QR and scallop mask** are files in `assets/`; replacing them only requires
+  `python src/build.py`.
+* **Fonts**: the card subsets must only be used for the exact card strings (they contain no
+  other letters). New copy → Vollkorn.
+* **Atur cara / photo gallery** are intentionally absent: the card has neither, and the brief
+  was to follow the card's details and order.
+
+## 7. Publishing on Netlify
+
+The repo carries the two things Netlify needs: `index.html` at the **root**, and a
 `netlify.toml` that pins the publish directory.
 
 ```
@@ -148,66 +198,62 @@ deploys. When a deploy shows **"Page not found"**, it is almost always one of th
 | No branches listed when linking | the Netlify GitHub App has no access to the repo | GitHub → Settings → Applications → Netlify → *Configure* → grant the repo, then re-link |
 | Still 404 after linking | publish directory set to `public`/`dist` in the UI | Build & deploy → Build settings → publish directory = `.` |
 
-Manual deploy, no GitHub in the loop (fastest, works even if the Git link is broken):
+Manual deploy (fastest, works even if the Git link is broken):
 
-1. Build the deploy folder: `mkdir -p dist/assets && cp index.html dist/ && cp assets/og.jpg dist/assets/`
-   (already done — `dist/` is ready and git-ignored)
+1. `mkdir -p dist/assets && cp index.html dist/ && cp assets/og.jpg dist/assets/`
+   (`dist/` is already built this way and is git-ignored)
 2. Open <https://app.netlify.com/drop>
-3. Drag the **`dist`** folder onto the page → you get a live URL in ~10 seconds.
+3. Drag the **`dist`** folder onto the page → live URL in ~10 seconds.
 
-Either way, then enable the share preview: uncomment the two `og:image` lines in `<head>` of
-`src/index.template.html`, set your real domain, and run `python src/build.py` again.
+For the share preview, `assets/og.jpg` is already generated (1200×630). When the invitation
+gets its real domain, set `og:image` in the template to the absolute URL
+(`https://your-domain/assets/og.jpg`) and rebuild — WhatsApp needs an absolute URL.
 
-## 5. RSVP — and getting a CSV
+## 8. RSVP + guestbook storage (Google Sheet)
 
-The form has three modes, set at the top of the script. Default is WhatsApp; nothing else
-needs a backend, so the page stays a single static file.
-
-```js
-var RSVP_CHANNEL  = "whatsapp";   // "whatsapp" | "sheet" | "netlify"
-var RSVP_ENDPOINT = "";           // Apps Script /exec URL  (for "sheet")
-var RSVP_KEY      = "";           // shared secret          (for "sheet")
-```
+One Apps Script endpoint stores everything: RSVPs and guestbook wishes. Three channels,
+selected by `RSVP_CHANNEL`; `"auto"` (the default) uses the sheet whenever `RSVP_ENDPOINT` is a
+URL, else falls back to WhatsApp.
 
 | Mode | Where answers go | CSV |
 |---|---|---|
-| `whatsapp` | the guest's own WhatsApp message to Azam | ✗ (you copy them out) |
-| `sheet` | rows in a **Google Sheet**, via a free Apps Script endpoint | ✓ native |
-| `netlify` | **Netlify Forms** (100 submissions/month on the free plan) | ✓ button in the dashboard |
+| `whatsapp` | the guest's own WhatsApp message to Azam | ✗ |
+| `sheet` | rows in a **Google Sheet**, via a free Apps Script web app | ✓ native |
+| `netlify` | **Netlify Forms** (100 submissions/month on the free plan) | ✓ button in the UI |
 
-### Recommended: Google Sheet → CSV
+Setup is in [`apps-script/README.md`](apps-script/README.md). Columns:
+`Masa (server), Masa (pelawat), Nama, Telefon, Status, Dewasa, Kanak-kanak, Jumlah tetamu,
+Ucapan, Dijemput, Halaman` — UTF-8 with BOM so Excel opens it cleanly.
 
-Setup is in [`apps-script/README.md`](apps-script/README.md) — paste `apps-script/Code.gs`
-into script.google.com, deploy as a Web app, copy the `/exec` URL into `RSVP_ENDPOINT`,
-set `RSVP_CHANNEL = "sheet"`, rebuild.
+**Guestbook rows** are written with `Status = Ucapan`, `Telefon` blank and 0 guests, so they
+never disturb the attendance totals. They are appended, never merged into an RSVP row.
+`apps-script/Code.gs` handles this (see `isWish`), and its dashboard shows a separate
+"Ucapan buku tetamu" count.
 
-Then the CSV is available three ways:
+> ⚠️ **After updating `apps-script/Code.gs`, redeploy it**: Deploy → Manage deployments →
+> Edit (✏️) → *New version* → Deploy. Apps Script serves the deployed version, not the editor
+> file. Until then the guestbook still saves (the page posts a marker phone number so the old
+> code appends instead of overwriting), but those rows appear as `Hadir` with 0 guests.
 
-* **File → Download → Comma-separated values** in the spreadsheet
-* **`<exec URL>?csv=1&key=YOUR_SECRET`** — downloads a fresh CSV on demand
-* **`<exec URL>`** — a small dashboard with totals (hadir / tidak hadir / jumlah tetamu)
-
-Columns: `Masa (server), Masa (pelawat), Nama, Telefon, Status, Dewasa, Kanak-kanak,
-Jumlah tetamu, Ucapan, Dijemput, Halaman`. UTF-8 with BOM so Excel opens it cleanly.
-
-Behaviour: a repeat reply **updates** the guest's row instead of duplicating it (matched on
-phone, or name when no phone is given); a hidden honeypot field silently drops bots; after a
-successful save the guest sees a receipt with an optional "Hantar juga melalui WhatsApp".
+Behaviour: a repeat RSVP **updates** that guest's row (matched on phone, or name when no phone
+is given); a hidden honeypot field silently drops bots; after a successful save the guest sees
+a receipt with an optional "Hantar juga melalui WhatsApp".
 
 > `mode: "no-cors"` is used for the Google endpoint (a `text/plain` POST is a "simple"
 > request, so no CORS preflight), which means the page cannot read the response — the
-> confirmation is optimistic and the WhatsApp link stays as the fallback. That is the normal
-> trade-off for stateless static hosting; a real success/failure readout needs a backend.
+> confirmation is optimistic and the WhatsApp link stays as the fallback.
 
-## 6. Known gaps / decisions
+## 9. Known gaps / decisions
 
-1. **Music** — waiting on a track (see §3).
-2. **Photographs** — none yet, so no gallery and no couple photo section.
-3. **Atur cara times** — placeholder, confirm before sharing.
-4. **RSVP storage** — WhatsApp, by design (§5).
-5. **Dark mode** — intentionally not implemented: the card is a cream/sage artefact and a dark
-   theme would break it. `color-scheme: light` is pinned.
-6. **`noindex`** — set so the couple's phone number doesn't end up in search results. Remove
-   the meta tag if that's not wanted.
-7. **Accessibility** — reduced-motion is respected (no petals, no reveals, instant open),
-   the cover is a real button, the sheet closes with Escape and returns focus.
+1. **Photographs** — none yet, so no gallery and no couple photo section.
+2. **Dark mode** — intentionally absent: the card is a cream/mocha artefact and a dark theme
+   would break it. `color-scheme: light` is pinned.
+3. **`noindex`** — set so the family's phone numbers don't end up in search results.
+4. **Accessibility** — the cover is a real button (Enter/Space), the RSVP sheet and the
+   all-wishes overlay close with Escape and return focus, every control is reachable by
+   keyboard, and reduced-motion is honoured.
+5. **`file://` preview** — works, except the guestbook's live wish list (cross-origin `fetch`
+   from a `file:` origin is blocked) and clipboard fallbacks; use `run-locally.bat`.
+6. **Licensing** — the card's typefaces (MoonTime, Daydream, TheSeasons, Brittany Signature)
+   are commercial Canva faces. The shipped files are subsets of the couple's own card, fine for
+   rebuilding *this* invitation, not for reuse elsewhere. Vollkorn and La Belle Aurore are OFL.

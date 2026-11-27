@@ -1,0 +1,5 @@
+La Belle Aurore|normal|400|LaBelleAurore-400.woff2
+Vollkorn|italic|400|Vollkorn-400i.woff2
+Vollkorn|italic|600|Vollkorn-600i.woff2
+Vollkorn|normal|400|Vollkorn-400.woff2
+Vollkorn|normal|600|Vollkorn-600.woff2

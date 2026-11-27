@@ -322,6 +322,45 @@ check('round-trips the quoted name',
       parsed.some((r) => r[2] === 'Aminah, "Kak Min"'), 'name not parsed back');
 
 console.log('');
+console.log('guestbook wishes (status "ucapan")');
+const before = sh.getLastRow();
+const hadirBefore = sh._rows.slice(1).filter((r) => r[4] === 'Hadir').length;
+const gb1 = post({ key: SECRET, nama: 'Nurul Aisyah', telefon: '0000000000', status: 'ucapan',
+                   dewasa: 0, kanak_kanak: 0, ucapan: 'Semoga bahagia hingga ke jannah!' });
+check('wish accepted', gb1.json.ok === true, gb1.body);
+check('wish APPENDS instead of overwriting the same-name RSVP row',
+      sh.getLastRow() === before + 1, 'rows ' + before + ' -> ' + sh.getLastRow());
+const wishRow = sh._rows[sh.getLastRow() - 1];
+check('stored with status Ucapan', wishRow[4] === 'Ucapan', wishRow[4]);
+check('wish row carries no guests', wishRow[5] === 0 && wishRow[7] === 0, wishRow[5] + '/' + wishRow[7]);
+check('marker phone is blanked', wishRow[3] === '', JSON.stringify(wishRow[3]));
+check('wish text stored', wishRow[8] === 'Semoga bahagia hingga ke jannah!', wishRow[8]);
+
+const gb2 = post({ key: SECRET, nama: 'Nurul Aisyah', telefon: '0000000000', status: 'ucapan',
+                   ucapan: 'Second wish from the same guest' });
+check('a second wish from the same person also appends',
+      gb2.json.ok === true && sh.getLastRow() === before + 2, 'rows ' + sh.getLastRow());
+
+console.log('');
+console.log('dashboard separates wishes from attendance');
+const dash2 = ctx.doGet({ parameter: {} }).getContent();
+function dashNum(html, label) {
+  const i = html.indexOf(label);
+  if (i < 0) return -1;
+  const m = html.slice(i).match(/>(\d+)</);
+  return m ? +m[1] : -1;
+}
+check('dashboard labels wishes', dash2.indexOf('Ucapan buku tetamu') > -1);
+check('wishes are not counted as hadir',
+      dashNum(dash2, 'Hadir (bilangan jawapan)') === hadirBefore,
+      'hadir=' + dashNum(dash2, 'Hadir (bilangan jawapan)') + ' expected ' + hadirBefore);
+check('dashboard counts the two wishes',
+      dashNum(dash2, 'Ucapan buku tetamu') === 2, dashNum(dash2, 'Ucapan buku tetamu'));
+check('CSV still exposes the wish text',
+      ctx.doGet({ parameter: { csv: '1', key: SECRET } }).getContent()
+        .indexOf('Second wish from the same guest') > -1);
+
+console.log('');
 console.log('bound-script mode (Extensions > Apps Script inside a sheet)');
 const bound = makeSpreadsheet('Kad Kahwin', 'BOUND1');
 store.spreadsheets.BOUND1 = bound;

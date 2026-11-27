@@ -112,3 +112,77 @@ The Apps Script dashboard response embeds the CSV link, which leaked the deploym
 **Left test data in their sheet:** 4 rows (UJIAN-AUTOMATED, UJIAN-DARI-BROWSER, DIAG, UJIAN-STATUS) — rows 2–5, all labelled "(boleh padam)". Flagged to the user for deletion; the script has no delete endpoint.
 
 **Second gotcha:** Apps Script serves the *deployed* version, not the editor file. Any `Code.gs` edit needs Deploy → Manage deployments → Edit → New version, otherwise `/exec` keeps running the old code.
+
+## 2026-11-27 — Local preview: run-locally.bat and the file:// caveat
+
+**Asked:** how to run the site locally, without knowing Python commands.
+
+**Answer:** two paths, no terminal needed for either.
+1. **Double-click `index.html`** — the page is self-contained (images are data URIs, only Google Fonts is external), so `file://` renders it.
+2. **Double-click `run-locally.bat`** (new) — starts `py -3 -m http.server 8000 --bind 0.0.0.0` in the foreground, opens the browser via a short-lived helper window, prints `localhost` and `COMPUTERNAME` URLs, and stops when the window closes.
+
+**What I verified:** the launcher run under a Windows-like PATH (System32 first) prints its banner and serves `http://localhost:8000` → 200 with the right `<title>`, artwork loaded (`naturalWidth > 0`), `document.fonts.status === 'loaded'`, and the LAN IP responded 200 as well.
+
+**What I could NOT verify:** `file://` — the BetterWright harness rejects `file:` navigation ("Browser navigation scheme is not available"), so the double-click path is reasoned, not proven. Known differences on `file://`: clipboard write fails (code already falls back to a toast), and `?to=` query strings are unreliable, which is why the bat is the recommended preview.
+
+**Two BAT gotchas found while testing:**
+- `timeout /t 2` resolved to **GNU timeout** from mingw when invoked through Git Bash and failed with `invalid time interval '/t'` → replaced with `ping -n 3 127.0.0.1 >nul`.
+- `start "title" /min cmd /c "…"` for a background server did not come up when launched through bash's cmd; running the server in the **foreground** of the same window is reliable and also removes the `taskkill /FI WINDOWTITLE` cleanup hack.
+- Python resolution order is now `py -3` then `python`, each validated with `-c "import sys"` so the Windows Store stub (`WindowsApps\python.exe`) cannot silently open the Store.
+
+## 2026-11-27 — Print-card design spec + web assets extracted from the Canva PDF
+
+**Branch / HEAD:** `main`
+**Asked:** measure the printed card PDF (`Reference/Jemputan Imas&Azam-1 (1).pdf`), export web assets, and write `ref/refcard/DESIGN-SPEC.md` (fonts usable? panel insets + scallop counts?). `src/index.template.html` and `index.html` were off-limits and untouched.
+
+**Findings (non-obvious ones):**
+- Page is 297.75 × 419.25 pt = **105 × 148 mm (A6)**, not A5.
+- The background is **not** a full-bleed artwork: one 1000×1000 tile (xref 27 + soft mask 28) painted **17×** on a lattice **rotated 25.732°**, step 118.1 pt ≈ the tile side. So `background-repeat` cannot reproduce it axis-aligned.
+- The cream panel is a **raster image** (xref 25 + mask 26), *not* a vector path and not a clip path — `get_drawings()` returns only white rects, two rules, the ornament, the QR plate and the QR modules. The scallop silhouette lives only in the alpha channel.
+- Panel: insets **13.14 %W left / 10.10 %H top / 13.21 %W right / 10.02 %H bottom**; **14 bumps on the top arch, 12 on the left edge** (12 right, 10 bottom = 48 total); pitch 20.72 pt, amplitude 5.3 pt; base shape is an arch (top corner R ≈ 47 % of panel width, bottom R ≈ 9 %).
+- Shadow is a shaped Gaussian glow (σ ≈ 8 pt, #6E5039 @ .66, zero offset) baked into the same image.
+- Colours: paper `#FFFFFF`, motif ink `#9E7453` (lighter than the type!), panel `#F9F7F5` (not the guessed `#f7f1e7`), type brown `#785D41`, DIS accent `#4D0F17` (render) vs PDF swatch `#4D0010`.
+- **All 9 embedded fonts are cmap-less Canva subsets** — unusable as-is. Rebuilt each as `assets/fonts/web/*.woff2` by synthesising a `cmap` from ToUnicode **plus CID↔char pairs recovered by aligning Identity-H show-strings with pymupdf's text** (that recovered the missing `o` in TheSeasons-BdIt). None is COMPLETE; every card string renders, but `W` (→ "Walimatul Urus") and `f q v x z F G J L N O Q V W X` are absent from TheSeasons-Reg.
+- Tracking: cover small caps 0.164 em (thin spaces in the source), everything else on page 2 +0.067 em.
+- The QR is vector and decodes to `https://maps.app.goo.gl/TxpW6quXn25QASN97`.
+
+**Assets:** `assets/card-bg.webp` (1200×1690, produced by rendering the PDF with the panel + type stripped out — most faithful route), `assets/card-tile.webp`, `assets/panel-scallop.svg` (alpha-traced, 468 pts, IoU 0.9984 vs the source mask), `assets/flourish.svg`, `assets/qr.svg`, `assets/fonts/**`.
+
+**Gotcha worth remembering:** Chrome mis-renders `filter: drop-shadow()` **and** `mask` on the *same* element (silhouette blurs, scallops vanish). Put the mask on a child and the drop-shadow on a wrapper — verified with a real browser proof (`work/proof.html`, `work/proof-cover.png`), which also confirmed the type scale to < 1 pt per line.
+
+**Verification:** every measurement re-checked against the 150-dpi PNGs; proof page rendered in Chromium; QR re-decoded from the exported SVG (needs a quiet zone for cv2 to read it).
+
+## 2026-11-27 — Rebuilt the invitation from the new card; added guestbook, gift list, hidden YouTube song
+
+**Asked:** (1) rebuild the e-invitation to follow the *new* attached card design exactly — details, order, colours, elements, effects; (2) add a "Sign Our Guestbook" section styled like `aliveinvite.com/hazimxdina` from `Reference/Link for reference.txt`; (3) integrate the client's YouTube song, autoplaying from **1:55** and looping from there, hidden; (4) add a section linking their gift-list Google Sheet; (5) cover shows **initials only**, tap for a smooth transition.
+
+**Findings**
+- New card = `Reference/Jemputan Imas&Azam-1 (1).pdf`, A6, Canva. Palette: panel `#F9F7F5`, type brown `#785D41`, maroon accent `#4D0F17`, toile motif `#9E7453`. Panel is a raster with an **alpha-traced scalloped silhouette** (48 bumps: 14 top, 12 sides, 10 bottom) — no vector path. Background is one 118.4 pt motif cell on a 25.732° lattice, so it tiles.
+- Embedded fonts are **Canva subsets** (MoonTime only `A I a m s z`, etc.). Usable for the card's exact strings, useless for new copy → new UI uses **Vollkorn** (the card's own secondary face), guestbook wishes use **La Belle Aurore** (the reference's face).
+- Reference guestbook (aliveinvite.com): one wish per slide, script message, tracked uppercase name, dot nav, `see all wishes` overlay, then `Nama anda` + `Message` + `Ucapan Anda`.
+- Song is `9CHAP_Sdc9A` = "Banda Neira – Sampai Jadi Debu (Peaceful Piano)", 273 s, embeddable. **kadkahwinmy.com uses the same video with `&t=115s`**, drives it with `vue-youtube` (IFrame API), seeks on open — and never loops. It parks a full-size iframe off-screen. Our implementation keeps the API but adds the `ENDED → seekTo(115)` loop and starts on the cover tap.
+- Apps Script CSV endpoint sends `Access-Control-Allow-Origin: *` end-to-end, so the guestbook can read wishes directly from the sheet.
+
+**Changes**
+- `src/index.template.html` — full rewrite: toile + scalloped cover (initials `I & A`), card interior in the card's exact order (greeting → hosts → menjemput → guest line → rule → puteri kami → italic names → script line → flourish → SABTU/26/DIS/2026 + ALAMAT + MASA MAJLIS band → QR → 4 contacts), countdown, **Senarai Hadiah**, RSVP, **Sign Our Guestbook** (carousel + dots + all-wishes overlay + form), footer, bottom bar `RSVP · Hadiah · Lagu`.
+- `src/build.py` — inlines tile, scallop mask, flourish, QR and **all 12 font files**; no external font/image request remains (468 KB single file).
+- `assets/` — `card-tile-500.webp`, `panel-scallop.svg`, `flourish.svg`, `qr.svg`, `fonts/web/*` (subsetted card faces, re-cmapped), `fonts/google/*` (Vollkorn variable + La Belle Aurore, subsetted), regenerated `og.jpg`.
+- `apps-script/Code.gs` — guestbook-aware: `status:"ucapan"` rows become Status `Ucapan`, 0 guests, blank phone, always appended (never merged into an RSVP row); dashboard adds "Ucapan buku tetamu".
+- `apps-script/test.js` — +9 assertions for the guestbook path → **51 pass**.
+- `README.md` rewritten; `docs/agent-memory/PROJECT_DOCUMENTARY.md` created; `.gitignore` ignores `work/`.
+- `ref/refcard/` — card renders + `DESIGN-SPEC.md` (measurements, colours, font coverage, CSS recipe).
+
+**Verification**
+- Music: `YT.get('ytplayer')` → state 1, time 117.8, unmuted, vol 55; seek to 270 → returns to 117.2 playing, so it loops at 1:55. Iframe is 366×206 parked at `bottom:-320px` (offscreen), nothing visible.
+- Guestbook: loads live wishes from the couple's sheet (filters `UJIAN…`/`DIAG…`), shows the loading state, optimistic submit → dot count +1, thanks message, form cleared; captured POST body `{status:"ucapan", telefon:"0000000000", dewasa:0, …}` against a local mock (never the live sheet).
+- RSVP: mock POST captured with correct pax; success screen + WhatsApp fallback href; Escape closes and returns focus.
+- Cover: `main` opacity 0 before the tap (no leaked content), cover `display:none` after; `?to=` renders `KEPADA / Nama`, absent without it.
+- Layout: 320/390/1280 with `scrollWidth ≤ innerWidth`; reduced-motion shows everything instantly; footer clear of the fixed bar.
+- Fonts: all 10 families report `loaded`, and every card string was checked codepoint-by-codepoint against the subset cmaps before use.
+- `node apps-script/test.js` → 51 passed, 0 failed. `node --check work/inline.js` → OK.
+
+**Follow-ups**
+- **Redeploy `apps-script/Code.gs`** (Deploy → Manage deployments → Edit → New version). Until then guestbook rows still save (marker phone prevents overwrites) but appear as `Hadir` with 0 guests.
+- Test the song on a real iPhone (Low Power Mode blocks unmuted playback; the retry + `Lagu` button are the fallbacks).
+- The sheet still holds the 4 old `UJIAN/DIAG` test rows — safe to delete; the guestbook filters them out.
+- Nothing was committed or pushed (a push would deploy).

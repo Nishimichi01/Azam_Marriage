@@ -1,5 +1,5 @@
 /**
- * RSVP endpoint — Walimatul Urus · Azam & Nazifa
+ * RSVP endpoint — Walimatul Urus · Imas & Azam
  * ---------------------------------------------------------------------------
  * Stores every RSVP as a row in a Google Sheet, and serves the whole sheet as
  * a CSV on demand. Runs on Google's free Apps Script — no server, no database,
@@ -8,8 +8,8 @@
  * SETUP (3 minutes)
  *  1. Open https://script.google.com → "New project".
  *  2. Delete the sample code, paste this file, then press Save.
- *  3. Change SECRET below to any random string, and put the same string into
- *     RSVP_KEY in index.html.
+ *  3. SECRET below is already set to the deployed value — it MUST stay identical
+ *     to RSVP_KEY in index.html, otherwise every save silently fails.
  *  4. Deploy → "New deployment" → type "Web app"
  *       Description : RSVP
  *       Execute as  : Me
@@ -25,9 +25,14 @@
  */
 
 var SHEET_NAME = 'RSVP';
-var SECRET     = 'TUKAR-KEPADA-STRING-RAWAK';   // must match RSVP_KEY in index.html
+var SECRET     = '$DanishVb09';                 // must match RSVP_KEY in index.html
 var TIMEZONE   = 'Asia/Kuala_Lumpur';
-var TITLE      = 'RSVP · Walimatul Urus Azam & Nazifa';
+var TITLE      = 'RSVP · Walimatul Urus Imas & Azam';
+
+// The guestbook (index.html) posts wishes with this marker in place of a phone
+// number: a non-empty, never-matching value stops find_() from updating (and so
+// wiping) an existing RSVP row that happens to carry the same name.
+var GUESTBOOK_MARK = '0000000000';
 
 var HEADERS = [
   'Masa (server)', 'Masa (pelawat)', 'Nama', 'Telefon', 'Status',
@@ -63,11 +68,18 @@ function doPost(e) {
     var nama = String(body.nama || '').trim().slice(0, 120);
     if (!nama) return json_({ ok: false, error: 'no name' });
 
-    var hadir  = body.status !== 'tidak';
+    // a guestbook wish is a reply without attendance: never counted as a guest,
+    // and never merged into an RSVP row
+    var isWish = String(body.status || '').toLowerCase() === 'ucapan' ||
+                 String(body.jenis || '').toLowerCase() === 'ucapan' ||
+                 String(body.kind || '').toLowerCase() === 'guestbook';
+
+    var hadir  = !isWish && body.status !== 'tidak';
     var dewasa = hadir ? num_(body.dewasa, 1) : 0;
     var kanak  = hadir ? num_(body.kanak_kanak, 0) : 0;
     var phone  = String(body.telefon || '').replace(/[^0-9+]/g, '').slice(0, 24);
     if (phone) phone = phone.charAt(0) + phone.slice(1);   // force text, keeps the leading 0
+    if (phone === GUESTBOOK_MARK) phone = '';
 
     var book  = book_();
     var sheet = book.sh;
@@ -76,7 +88,7 @@ function doPost(e) {
       date_(body.masa),
       nama,
       phone,
-      hadir ? 'Hadir' : 'Tidak Hadir',
+      isWish ? 'Ucapan' : (hadir ? 'Hadir' : 'Tidak Hadir'),
       dewasa,
       kanak,
       dewasa + kanak,
@@ -85,7 +97,7 @@ function doPost(e) {
       String(body.halaman || '').slice(0, 300)
     ];
 
-    var hit = find_(sheet, nama, phone);
+    var hit = isWish ? 0 : find_(sheet, nama, phone);
     if (hit) {
       sheet.getRange(hit, 1, 1, row.length).setValues([row]);
       sheet.getRange(hit, 1).setNote('Dikemas kini pada ' + stamped_());
@@ -117,9 +129,10 @@ function doGet(e) {
   }
 
   var rows = book_().sh.getDataRange().getValues().slice(1);
-  var hadir = 0, tidak = 0, orang = 0, kanak = 0;
+  var hadir = 0, tidak = 0, orang = 0, kanak = 0, ucapan = 0;
   rows.forEach(function (r) {
     if (r[4] === 'Hadir') { hadir++; orang += num_(r[5], 0); kanak += num_(r[6], 0); }
+    else if (r[4] === 'Ucapan') { ucapan++; }
     else if (r[4]) { tidak++; }
   });
 
@@ -134,6 +147,7 @@ function doGet(e) {
         row_('Hadir (jumlah dewasa)', orang) +
         row_('Hadir (jumlah kanak-kanak)', kanak) +
         row_('Tidak hadir', tidak) +
+        row_('Ucapan buku tetamu', ucapan) +
       '</table>' +
       '<p style="margin-top:24px"><a href="' + link + '" style="color:#78804B">Muat turun CSV</a></p>' +
     '</div>'
