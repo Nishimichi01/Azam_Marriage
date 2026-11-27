@@ -142,8 +142,10 @@ the form (`Nama anda`, `Mesej`, `Ucapan Anda`).
 
 * **Reading** — wishes come from the `Ucapan` column of the RSVP sheet
   (`<exec URL>?csv=1&key=…`, which Google serves with `Access-Control-Allow-Origin: *`).
-  Newest first, up to 8 in the carousel; `lihat semua ucapan` shows every one. The couple's
-  `UJIAN…` / `DIAG…` test rows are filtered out.
+  Only rows written through this form (`Status = Ucapan`) are shown, so a message typed into
+  the RSVP form does not leak into the guestbook; wishes saved before that status existed
+  (`Hadir` with 0 guests) still appear. Newest first, up to 8 in the carousel; `lihat semua
+  ucapan` shows every one. The couple's `UJIAN…` / `DIAG…` test rows are filtered out.
 * **Writing** — the form POSTs `{ status: "ucapan", ucapan: "<message>" }` to the same Apps
   Script endpoint, and the wish appears immediately (optimistic), then persists.
 * Wishes are **not** counted as attending guests (see §6).
@@ -291,7 +293,7 @@ phone and 0 guests, and the guestbook reads the same CSV, filtering on the `Ucap
 you want a tidy read-only view, add an extra tab (the script never touches it):
 
 ```
-=QUERY(RSVP!A2:K, "select C, I, A where E = 'Ucapan' order by A desc", 0)
+=QUERY(RSVP!A2:K, "select C, I, A where E = 'Ucapan' order by A desc label C 'Nama', I 'Ucapan', A 'Masa'", 0)
 ```
 
 (Google Sheets uses `;` instead of `,` in some locales.) Or use **Data → Create a filter view**

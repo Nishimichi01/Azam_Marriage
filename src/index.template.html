@@ -1292,6 +1292,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     if (rows.length < 2) return [];
     var head = rows[0].map(function (h) { return h.trim().toLowerCase(); });
     var iN = head.indexOf("nama"), iU = head.indexOf("ucapan");
+    var iS = head.indexOf("status"), iD = head.indexOf("dewasa"), iK = head.indexOf("kanak-kanak");
     if (iN < 0 || iU < 0) return [];
     var out = [];
     for (var r = 1; r < rows.length; r++) {
@@ -1299,6 +1300,18 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
       var msg = (rows[r][iU] || "").trim();
       if (!nama || !msg) continue;
       if (/^(ujian|diag|test)\b/i.test(nama)) continue;     // the couple's test rows
+
+      // The guestbook shows wishes, not RSVP notes: only rows written through the
+      // guestbook form (Status = Ucapan). Rows saved before that status existed
+      // are "Hadir" with zero guests, so they stay visible.
+      if (iS >= 0) {
+        var st = String(rows[r][iS] || "").trim().toLowerCase();
+        var zero = iD >= 0 && iK >= 0
+          ? !parseInt(rows[r][iD], 10) && !parseInt(rows[r][iK], 10)
+          : false;
+        if (st !== "ucapan" && !(st === "hadir" && zero)) continue;
+      }
+
       out.push({ n: nama, m: msg });
     }
     return out.reverse();                                   // newest first
