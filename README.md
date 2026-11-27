@@ -272,6 +272,34 @@ Behaviour: a repeat RSVP **updates** that guest's row (matched on phone, or name
 is given); a hidden honeypot field silently drops bots; after a successful save the guest sees
 a receipt with an optional "Hantar juga melalui WhatsApp".
 
+### Moving to a new Google Sheet
+
+The endpoint writes to whatever `SPREADSHEET_ID` holds in **Project Settings → Script
+properties** (a configured id now wins over the sheet a *bound* script lives in):
+
+1. Create the new sheet, copy the id from `…/spreadsheets/d/` **`<ID>`** `/edit`.
+2. Share it as **Editor** with the Google account that deployed the script (`Execute as: Me`).
+3. Apps Script → ⚙ Project Settings → Script properties → edit `SPREADSHEET_ID` → paste → Save.
+   If the property is missing, add it (name `SPREADSHEET_ID`).
+4. Open the `/exec` URL once: the script creates the `RSVP` tab and the header row itself.
+5. Send one RSVP and one guestbook wish to confirm. The old sheet stays as an archive.
+
+A property change needs **no redeploy**; only a code paste does (*Manage deployments → New
+version*).
+
+### Do the wishes need their own sheet?
+
+No. RSVPs and wishes live in the **same** tab: a wish is a row with `Status = Ucapan`, an empty
+phone and 0 guests, and the guestbook reads the same CSV, filtering on the `Ucapan` column. If
+you want a tidy read-only view, add an extra tab (the script never touches it):
+
+```
+=QUERY(RSVP!A2:K, "select C, I, A where E = 'Ucapan' order by A desc", 0)
+```
+
+(Google Sheets uses `;` instead of `,` in some locales.) Or use **Data → Create a filter view**
+on `Status = Ucapan`.
+
 > `mode: "no-cors"` is used for the Google endpoint (a `text/plain` POST is a "simple"
 > request, so no CORS preflight), which means the page cannot read the response — the
 > confirmation is optimistic and the WhatsApp link stays as the fallback.

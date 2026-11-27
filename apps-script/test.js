@@ -365,9 +365,37 @@ console.log('bound-script mode (Extensions > Apps Script inside a sheet)');
 const bound = makeSpreadsheet('Kad Kahwin', 'BOUND1');
 store.spreadsheets.BOUND1 = bound;
 store.active = bound;
+
+// a freshly bound project has no SPREADSHEET_ID stored
+const savedId = props.SPREADSHEET_ID;
+delete props.SPREADSHEET_ID;
 const r5 = post({ key: SECRET, nama: 'Zul bin Bakar', status: 'hadir', dewasa: '2' });
 check('writes into the containing sheet', r5.json.ok === true, r5.body);
 check('created the RSVP tab there', !!bound.getSheetByName('RSVP'));
+
+console.log('');
+console.log('a configured SPREADSHEET_ID overrides the bound sheet');
+const chosen = makeSpreadsheet('Sheet baru', 'NEW2');
+store.spreadsheets.NEW2 = chosen;
+props.SPREADSHEET_ID = 'NEW2';
+const r6 = post({ key: SECRET, nama: 'Aina binti Ali', status: 'hadir', dewasa: '1' });
+check('writes into the configured spreadsheet', !!chosen.getSheetByName('RSVP'), r6.body);
+const boundSheet = bound.getSheetByName('RSVP');
+check('leaves the bound sheet untouched', boundSheet.getLastRow() === 2, boundSheet.getLastRow());
+props.SPREADSHEET_ID = savedId;
+
+console.log('');
+console.log('a bad SPREADSHEET_ID fails loudly instead of creating a mystery sheet');
+const sheetsBefore = Object.keys(store.spreadsheets).length;
+props.SPREADSHEET_ID = 'NOT-A-REAL-ID';
+const bad = post({ key: SECRET, nama: 'Ujian ID salah' });
+check('reports the failure', bad.json.ok === false, bad.body);
+check('names the offending id', /NOT-A-REAL-ID/.test(bad.json.error || ''), bad.json.error);
+check('does not create another spreadsheet',
+      Object.keys(store.spreadsheets).length === sheetsBefore,
+      Object.keys(store.spreadsheets).length + ' vs ' + sheetsBefore);
+check('does not overwrite the stored id', props.SPREADSHEET_ID === 'NOT-A-REAL-ID', props.SPREADSHEET_ID);
+props.SPREADSHEET_ID = savedId;
 
 console.log('');
 console.log(pass + ' passed, ' + fail + ' failed');

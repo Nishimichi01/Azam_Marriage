@@ -9,7 +9,8 @@
 //   GET  ?csv=1&key=SECRET       -> the whole sheet as CSV
 //
 // Rows go into the "RSVP" tab of the spreadsheet whose id sits in the
-// SPREADSHEET_ID script property (a bound script uses its own sheet instead).
+// SPREADSHEET_ID script property (a configured id wins; otherwise a bound
+// script uses the sheet it lives in).
 //
 // To publish a change: paste this file, Save, then
 // Deploy > Manage deployments > pencil > Version: New version > Deploy.
@@ -154,15 +155,27 @@ function book_() {
   var id = props.getProperty('SPREADSHEET_ID');
   var ss = null;
 
-  // 1. bound script (Extensions > Apps Script from inside a sheet) - use that sheet
-  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (err) { ss = null; }
-
-  // 2. already created by a previous run
-  if (!ss && id) {
+  // 1. an explicitly configured spreadsheet always wins. This is how you move the
+  //    endpoint to a new sheet (Project Settings > Script properties > edit
+  //    SPREADSHEET_ID) without changing the deployment or the page.
+  if (id) {
     try { ss = SpreadsheetApp.openById(id); } catch (err) { ss = null; }
+    if (!ss) {
+      // NEVER fall through to "create a new one" here: that is how a wrong or
+      // unshared id silently becomes a mystery spreadsheet and overwrites the
+      // setting. Fail loudly instead, so the dashboard shows the real problem.
+      throw new Error('SPREADSHEET_ID is set to "' + id + '" but this script cannot open it. ' +
+                      'Check the id (only the part between /d/ and /edit) and that the sheet ' +
+                      'is shared as Editor with the account that deploys this script.');
+    }
   }
 
-  // 3. standalone script, first run - create the spreadsheet and remember it
+  // 2. bound script (Extensions > Apps Script from inside a sheet) - use that sheet
+  if (!ss) {
+    try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (err) { ss = null; }
+  }
+
+  // 3. standalone script with nothing configured - create the spreadsheet once
   if (!ss) {
     ss = SpreadsheetApp.create(TITLE);
     props.setProperty('SPREADSHEET_ID', ss.getId());
