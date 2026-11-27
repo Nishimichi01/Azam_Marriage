@@ -394,3 +394,19 @@ Prototype only — `index.html` and `src/` untouched.
 - `node --check` clean; `index.html`/`dist` in sync (470 KB).
 
 **Note:** backend untouched — the client already has the split working; only the site needs republishing.
+
+## 2026-11-27 — Wishes slide horizontally, one by one, with a fresh feed on every load
+
+**Asked:** (1) the wishes should animate like a real slide, one after another; (2) the list should be pulled from `Buku Tetamu` every time the page is refreshed.
+
+**Changes** (`src/index.template.html`, page only)
+- New slide transition: `.out-l` / `.out-r` glide the current wish 26 px out with a fade (230 ms), the text swaps, `.in-r` / `.in-l` re-seat the incoming wish 30 px on the far side with `transition:none`, then a forced reflow + `requestAnimationFrame` releases the class so it slides in (340 ms). `slideBusy` latches the sequence so beats never overlap.
+- Dwell time is no longer a fixed 6.5 s interval: `startSlides()` schedules a single timeout of `4600 + 45 * messageLength`, clamped 5.2–9.5 s, so long wishes are not cut off. Auto and manual moves both re-arm the timer.
+- Fresh data on every load: fetch uses `cache:"no-store"` **and** a `?wishes=1&ts=<now>` cache-buster; `pageshow` (`e.persisted`) resets `gbDone` and refetches when the browser restores the page from the back/forward cache; `visibilitychange` restarts the timer when the tab comes back.
+
+**Verification** (mock feed, 5 wishes + 1 UJIAN)
+- Auto-advance observed (Hakim → Legacy Wish after ~7 s), and a mid-transition sample showed `class="wishes out-l"` with `matrix(1,0,0,1,-19.58,0)` — a genuine horizontal slide, not a fade.
+- Resource timing shows one `/exec?wishes=1&ts=…&key=…` request per page load, so a refresh is always a new fetch.
+- `node --check` clean; `index.html` (472 KB) and `dist/` in sync.
+
+**Note:** still page-only — no Apps Script change; the client only needs to republish the site.

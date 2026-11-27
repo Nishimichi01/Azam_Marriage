@@ -440,14 +440,21 @@ section{position:relative;padding:22px 0}
 .wmsg{
   font-family:var(--wish);font-size:clamp(19px,5.2vw,23px);line-height:1.32;
   color:var(--brown-d);text-wrap:pretty;
-  transition:opacity .3s ease,transform .3s ease;
+  transition:opacity .34s ease,transform .34s cubic-bezier(.3,.7,.3,1);
+  will-change:transform,opacity;
 }
 .wname{
   margin-top:14px;font-family:var(--serif);font-weight:600;font-size:11.5px;
   letter-spacing:.16em;text-transform:uppercase;color:var(--brown);text-indent:.16em;
-  transition:opacity .3s ease;
+  transition:opacity .34s ease,transform .34s cubic-bezier(.3,.7,.3,1);
 }
-.wishes.swap .wmsg,.wishes.swap .wname{opacity:0;transform:translateY(5px)}
+/* the wish glides out one side and the next glides in from the other */
+.wishes.out-l .wmsg,.wishes.out-l .wname{opacity:0;transform:translate3d(-26px,0,0)}
+.wishes.out-r .wmsg,.wishes.out-r .wname{opacity:0;transform:translate3d(26px,0,0)}
+.wishes.in-r .wmsg,.wishes.in-r .wname,
+.wishes.in-l .wmsg,.wishes.in-l .wname{transition:none;opacity:0}
+.wishes.in-r .wmsg,.wishes.in-r .wname{transform:translate3d(30px,0,0)}
+.wishes.in-l .wmsg,.wishes.in-l .wname{transform:translate3d(-30px,0,0)}
 .wishes .empty{font-family:var(--serif);font-size:14px;font-style:italic;color:var(--muted);line-height:1.6}
 .dots{
   display:flex;flex-wrap:nowrap;justify-content:center;gap:7px;
@@ -1221,6 +1228,18 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     }, reduce ? 0 : 7000);
   }
 
+  // a page restored from the back/forward cache never re-runs the fetch above,
+  // so pull the guestbook again whenever the page comes back to life
+  window.addEventListener("pageshow", function (e) {
+    if (!e.persisted) return;
+    gbDone = false;
+    gbLoading = false;
+    loadWishes();
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && gbDone) startSlides();
+  });
+
   /* ============================================================
      SCROLL REVEAL
      ============================================================ */
@@ -1275,7 +1294,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
      GUESTBOOK — wishes live in the RSVP sheet's "Ucapan" column
      ============================================================ */
   var wishes = [], wi = 0, gbLoading = false, gbDone = false, gbBusy = false;
-  var SLIDE_MS = 6500;                   // how long each wish stays on screen
+  var SLIDE_MIN = 5200, SLIDE_MAX = 9500;   // reading time, scaled by message length
   var slideTimer = null, slideBusy = false, slideInView = false, slidePaused = false;
 
   function csvRows(text) {
@@ -1331,7 +1350,8 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     if (RSVP_CHANNEL !== "sheet" || !RSVP_ENDPOINT) { renderWishes(); return; }
     gbLoading = true;
     renderWishes();
-    fetch(RSVP_ENDPOINT + "?wishes=1&key=" + encodeURIComponent(RSVP_KEY), { cache: "no-store" })
+    fetch(RSVP_ENDPOINT + "?wishes=1&ts=" + Date.now() + "&key=" + encodeURIComponent(RSVP_KEY),
+          { cache: "no-store" })
       .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.text(); })
       .then(function (txt) { wishes = parseWishes(txt); gbDone = true; })
       .catch(function () { /* offline / cold start: keep the empty state */ })
@@ -1347,23 +1367,29 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     slideInView = true;
   }
 
+  // long wishes get a little longer on screen, so nobody is cut off mid-sentence
+  function slideDelay() {
+    var len = (wishes[wi] && wishes[wi].m || "").length;
+    return Math.max(SLIDE_MIN, Math.min(SLIDE_MAX, 4600 + len * 45));
+  }
+
   function startSlides() {
     stopSlides();
     if (reduce || wishes.length < 2) return;
-    slideTimer = window.setInterval(function () {
-      // never advance while the guest is reading the full list, typing, hovering
-      // the carousel, or when the tab/section is off screen
-      if (slideBusy || document.hidden || !slideInView) return;
-      if (gall && gall.classList.contains("on")) return;
+    slideTimer = window.setTimeout(function () {
+      // never advance while the guest is reading the full list, typing, resting a
+      // finger on the carousel, or when the tab/section is off screen
+      if (slideBusy || document.hidden || !slideInView) { startSlides(); return; }
+      if (slidePaused) { startSlides(); return; }
+      if (gall && gall.classList.contains("on")) { startSlides(); return; }
       var a = document.activeElement;
-      if (a && a.closest && a.closest("#gb-form")) return;
-      if (slidePaused) return;
+      if (a && a.closest && a.closest("#gb-form")) { startSlides(); return; }
       gotoWish(wi + 1, true);
-    }, SLIDE_MS);
+    }, slideDelay());
   }
 
   function stopSlides() {
-    if (slideTimer) window.clearInterval(slideTimer);
+    if (slideTimer) window.clearTimeout(slideTimer);
     slideTimer = null;
   }
 
@@ -1418,15 +1444,31 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
   function gotoWish(i, auto) {
     if (!wishes.length || slideBusy) return;
     slideBusy = true;
-    var box = $("wishes");
-    box.classList.add("swap");
-    window.setTimeout(function () {
-      wi = (i + wishes.length) % wishes.length;
+    var box = wishesEl;
+    var next = (i + wishes.length) % wishes.length;
+    var dir = next > wi || (wi === wishes.length - 1 && next === 0) ? 1 : -1;
+
+    if (reduce) {
+      wi = next;
       renderWishes();
-      box.classList.remove("swap");
       slideBusy = false;
-      if (!auto) startSlides();          // a manual move restarts the countdown
-    }, reduce ? 0 : 260);
+      if (!auto) startSlides();
+      return;
+    }
+
+    box.classList.add(dir > 0 ? "out-l" : "out-r");
+    window.setTimeout(function () {
+      wi = next;
+      renderWishes();
+      box.classList.remove("out-l", "out-r");
+      box.classList.add(dir > 0 ? "in-r" : "in-l");
+      box.getBoundingClientRect();                    // flush, so the enter position sticks
+      window.requestAnimationFrame(function () {
+        box.classList.remove("in-r", "in-l");
+        window.setTimeout(function () { slideBusy = false; }, 380);
+      });
+      startSlides();                                  // next beat, after the text settles
+    }, 230);
   }
 
   // swipe left / right
