@@ -21,11 +21,37 @@ Rebuild after editing the template:
 python src/build.py
 ```
 
-Preview locally (any static server):
+## Previewing it on your own computer
+
+**Easiest — no tools at all:** double-click **`index.html`**. It opens in your browser and
+works, because everything (fonts excepted) is inside that one file.
+
+**Recommended — double-click `run-locally.bat`.** It starts a tiny web server on
+`http://localhost:8000`, opens your browser, and stops when you close the black window.
+Use this one for testing, because a real address (`http://…`) is what the invitation sees
+when it is published — the per-guest links (`?to=Nama`) and copy-to-clipboard behave
+differently from a `file:///…` page.
+
+The launcher prints two addresses:
+
+* `http://localhost:8000` — this computer
+* `http://<computer-name>:8000` — the same page from a phone on the same Wi-Fi (Windows may
+  ask once about allowing Python through the firewall; allow it for *private* networks).
+  If the name does not resolve, use the IPv4 address from `ipconfig`.
+
+Closing the black window stops the server. If the window flashes and disappears, Python
+is not installed — just double-click `index.html` instead.
+
+Command line, if you prefer:
 
 ```bash
 python -m http.server 8000     # → http://localhost:8000
 ```
+
+**On your phone, over Wi-Fi:** run the server, then visit
+`http://<your-PC-IP>:8000` — find the IP with `ipconfig` (look for *IPv4 Address*). Add
+`--bind 0.0.0.0` if the phone cannot connect. This is the honest way to check the real
+touch feel before sending the link to anyone.
 
 ---
 
