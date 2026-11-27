@@ -66,7 +66,8 @@ function doPost(e) {
     var hadir  = body.status !== 'tidak';
     var dewasa = hadir ? num_(body.dewasa, 1) : 0;
     var kanak  = hadir ? num_(body.kanak_kanak, 0) : 0;
-    var phone  = String(body.telefon || '').replace(/[^0-9+]/g, '').slice(0, 20);
+    var phone  = String(body.telefon || '').replace(/[^0-9+]/g, '').slice(0, 24);
+    if (phone) phone = phone.charAt(0) + phone.slice(1);   // force text, keeps the leading 0
 
     var book  = book_();
     var sheet = book.sh;
@@ -172,11 +173,20 @@ function book_() {
     sh.setColumnWidth(9, 320);
   }
 
+  // Phones must stay text: Sheets parses "0123456789" as a number and drops the
+  // leading zero, which silently corrupts every Malaysian number on export.
+  sheetText_(sh, 4);
+
   // tidy the default empty sheet that Google creates with a new spreadsheet
   var first = ss.getSheetByName('Sheet1');
   if (first && first.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(first);
 
   return { ss: ss, sh: sh };
+}
+
+function sheetText_(sh, column) {
+  var rows = Math.max(sh.getMaxRows(), sh.getLastRow(), 2);
+  sh.getRange(1, column, rows, 1).setNumberFormat('@');
 }
 
 function parse_(e) {

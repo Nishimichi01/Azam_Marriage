@@ -19,13 +19,19 @@ const LF = String.fromCharCode(10);
 
 function makeSheet(name) {
   const rows = [];
+  const formats = {};           // column index -> number format
+  const asText = (col) => formats[col] === '@';
   return {
     name,
     _rows: rows,
+    _formats: formats,
     getLastRow: () => rows.length,
-    appendRow: (r) => { rows.push(r.slice()); },
+    getMaxRows: () => Math.max(rows.length, 1000),
+    getMaxColumns: () => 11,
+    appendRow: (r) => { currentSheet = { _formats: formats }; rows.push(coerce(r)); },
     getRange: (r, c, nr, nc) => ({
       setValues: (vals) => {
+        currentSheet = { _formats: formats };
         nr = nr || 1;
         nc = nc || (vals[0] ? vals[0].length : 1);
         for (let i = 0; i < vals.length; i++) {
@@ -48,7 +54,11 @@ function makeSheet(name) {
       setFontWeight: () => ({ setBackground: () => ({ setFontColor: () => {} }) }),
       setBackground: () => ({ setFontColor: () => {} }),
       setFontColor: () => {},
-      setNote: () => {}
+      setNote: () => {},
+      setNumberFormat: (f) => {
+        nr = nr || 1;
+        for (let i = 0; i < nr; i++) formats[c - 1 + i] = f;
+      }
     }),
     getDataRange: () => ({ getValues: () => rows.map((r) => r.slice()) }),
     setFrozenRows: () => {},
@@ -72,6 +82,9 @@ function makeSpreadsheet(title, id) {
   return ss;
 }
 
+// Sheets converts numeric-looking strings; a '@' (text) column keeps them as-is.
+let currentSheet = null;
+
 const store = { spreadsheets: {}, active: null, nextId: 1 };
 const props = {};
 
@@ -89,6 +102,17 @@ const SpreadsheetApp = {
 };
 
 /* ------------------------------------------------------- other services  */
+
+function coerce(row, startRow) {
+  return row.map((v, i) => {
+    if (typeof v !== 'string' || !/^[0-9]+$/.test(v)) return v;
+    const col = i;
+    const isText = currentSheet && currentSheet._formats[col] === '@';
+    if (isText) return v;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : v;
+  });
+}
 
 const PropertiesService = {
   getScriptProperties: () => ({
@@ -201,6 +225,12 @@ check('status stored', row[4] === 'Hadir', row[4]);
 check('dewasa + kanak-kanak', row[5] === 4 && row[6] === 2, row[5] + '/' + row[6]);
 check('total computed', row[7] === 6, row[7]);
 check('?to= capture stored', row[9] === 'Encik Ahmad', row[9]);
+
+// Malaysian numbers all start with 0; Sheets would strip it as a number
+check('phone column is formatted as text', sh._formats[3] === '@', sh._formats[3]);
+check('leading zero survives as a string',
+      row[3] === '0123456789' && typeof row[3] === 'string',
+      typeof row[3] + ':' + JSON.stringify(row[3]));
 
 console.log('');
 console.log('doPost - repeat reply updates instead of duplicating');

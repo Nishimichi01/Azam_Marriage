@@ -74,3 +74,20 @@ Append-only record of work sessions. Newest entries at the bottom.
 **Verification:** all three channels exercised in the browser. The sheet channel was POSTed against a local mock server — the captured body was `CT=text/plain;charset=utf-8` and the full JSON payload. Netlify channel captured via a fetch stub: `form-name=rsvp&nama=…&kanak-kanak=0`. WhatsApp channel produced the correct `wa.me` text and hid the duplicate link. Closing/reopening the sheet resets it. `node --check` on the extracted inline script passes.
 
 **Gotcha for future edits of this template:** escaping `\\n` inside a bash heredoc through the tool layer collapses to a real newline and breaks the JS string. Use `var NL = String.fromCharCode(10)` (now in the file) instead of `"\n"` literals.
+
+## 2026-11-27 — Google Sheets RSVP: bound vs standalone script trap and the test harness
+
+**Asked:** the user wants Google Sheets as the RSVP database, and pasted a Claude snippet using `SpreadsheetApp.getActiveSpreadsheet()` with `fetch(..., {mode:'no-cors', body: JSON.stringify(...)})`.
+
+**The trap in that snippet:** `getActiveSpreadsheet()` only resolves for a **bound** script (created via Extensions → Apps Script from inside a sheet). For a script created at script.google.com — which is what "New project" gives you — it returns `null`, so `null.appendRow(...)` throws and the web app answers 500. The front-end can't see it because `no-cors` makes the response opaque, so RSVPs silently vanish. This is the single most common failure of this pattern.
+
+**Changes to `apps-script/Code.gs`:**
+- `book_()` now resolves in order: `getActiveSpreadsheet()` (bound) → stored `SPREADSHEET_ID` property → create a new spreadsheet and store its id. Both install methods work with no configuration.
+- Accepts the shorter `{ name, attending, pax, message }` payload as aliases for `{ nama, status, dewasa, ucapan }`, so a different front-end can post to the same endpoint.
+- **Fixed a real compile bug:** the header comment contained `**/exec**`, whose `*/` terminated the block comment and left ` *  5. ...` as code — `SyntaxError: Unexpected token '*'`. Code.gs would not have run at all.
+
+**Page changes:** `RSVP_CHANNEL` defaults to `"auto"` and is resolved once at load from `RSVP_ENDPOINT`; if the channel says `sheet` but the endpoint is not a URL, it falls back to WhatsApp and `console.warn`s rather than dropping the reply.
+
+**Verification:** wrote `apps-script/test.js`, a Node harness that stubs SpreadsheetApp / ContentService / LockService / Utilities / PropertiesService / ScriptApp / HtmlService and runs the real Code.gs in a `vm` context — 38 checks covering sheet creation + headers, phone normalisation, pax totals, dedupe-as-update, absentees zeroed, wrong key, missing name, honeypot, the alias payload, dashboard totals, CSV mime/BOM/key, CSV quoting of commas+quotes with a round-trip parse, and bound-script mode. All pass. Browser side: auto mode POSTed the full JSON to a local mock (captured), and the misconfigured page correctly rendered the WhatsApp variant.
+
+**Note:** the tool layer collapses `\\n` inside heredocs, which twice broke JS string literals; `Code.gs` uses `String.fromCharCode(10)` (`NL`) for this reason and the test file is written with the `write` tool rather than a heredoc.

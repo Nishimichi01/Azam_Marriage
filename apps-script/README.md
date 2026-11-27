@@ -78,8 +78,17 @@ which is the usual cause of an "exception" 500 from a web app.
 So a fresh standalone script creates its own sheet on the first RSVP, and a bound
 script writes into the sheet you are already looking at. No configuration needed.
 
+## If you edit Code.gs, you must redeploy
+
+Apps Script serves the **deployed version**, not the file in the editor. After any
+change: **Deploy → Manage deployments → (pencil) Edit → Version: New version → Deploy.**
+Forgetting this is why a fix can "not work" — the old `/exec` keeps running.
+
 ## Behaviour worth knowing
 
+* **Phones are stored as text.** Without this, Sheets parses `0123456789` as a number and
+  drops the leading zero — every Malaysian number comes out as `123456789`. The script sets
+  the phone column to plain text (`@`) and re-writes the value, so exports keep the `0`.
 * **Re-submissions update, they don't duplicate.** A guest who replies twice is matched on
   phone number (or name when no phone is given) and their existing row is overwritten.
 * **Honeypot.** Bots that fill the hidden field are silently dropped.

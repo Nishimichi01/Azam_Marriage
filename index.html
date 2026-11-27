@@ -566,8 +566,8 @@ body.sh .sheet{transform:none;visibility:visible}
      "netlify"  = rows are saved by Netlify Forms → CSV button in the Netlify UI
                   (limited to 100 submissions/month on the free plan)          */
   var RSVP_CHANNEL  = "auto";   // "auto" | "sheet" | "netlify" | "whatsapp"
-  var RSVP_ENDPOINT = "";       // paste the Apps Script URL ending in /exec here
-  var RSVP_KEY      = "";       // same string as SECRET in apps-script/Code.gs
+  var RSVP_ENDPOINT = "https://script.google.com/macros/s/AKfycbzW8tj6hFnJ2xZoIUjDnwIyM1I0a-DMV5pDZy-1fekJFq4Xkk6YnrZCJ_fZ8AOdlU36vQ/exec";
+  var RSVP_KEY      = "$DanishVb09";   // same string as SECRET in apps-script/Code.gs
 
   /* "auto" = use the Google Sheet as soon as RSVP_ENDPOINT is filled in,
      so pasting the URL is the only step needed to switch storage on. */
@@ -852,6 +852,7 @@ body.sh .sheet{transform:none;visibility:visible}
   }
 
   function done(d) {
+    busy(false);
     $("d-nama").textContent = d.nama;
     $("d-sub").textContent = d.status === "hadir"
       ? "Kehadiran anda telah direkodkan: " + d.dewasa + " dewasa, " + d.kanak_kanak +
@@ -877,21 +878,36 @@ body.sh .sheet{transform:none;visibility:visible}
 
   // Google Sheets via Apps Script: text/plain keeps it a "simple" request, so no
   // CORS preflight; the response is opaque, hence the optimistic confirmation.
+  function busy(on) {
+    var b = $("f-send");
+    b.disabled = !!on;
+    b.textContent = on ? "Menghantar…" : RSVP_LABEL;
+  }
+
   function sendSheet(d) {
     if (!RSVP_ENDPOINT) { sendWhatsApp(d); return; }
+    busy(true);
     fetch(RSVP_ENDPOINT, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(d)
-    }).then(function () { done(d); }).catch(function () {
-      // keep the guest's answer reachable even if the sheet write failed
+    }).then(function () {
+      busy(false);
       done(d);
-      $("d-wa").hidden = false;
+    }).catch(function () {
+      // a failed write must not look like a success: offer WhatsApp instead
+      busy(false);
+      $("f-err").className = "err";
+      $("f-err").textContent = "Gagal menghantar. Sila cuba lagi, atau hantar melalui WhatsApp.";
+      var wa = $("d-wa");
+      wa.hidden = false;
+      wa.href = "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(message(d));
     });
   }
 
   function sendNetlify(d) {
+    busy(true);
     var body = new URLSearchParams({
       "form-name": "rsvp",
       nama: d.nama, telefon: d.telefon, status: d.status,
@@ -904,8 +920,10 @@ body.sh .sheet{transform:none;visibility:visible}
       body: body.toString()
     }).then(function (res) {
       if (!res.ok) throw new Error("http " + res.status);
+      busy(false);
       done(d);
     }).catch(function () {
+      busy(false);
       $("f-err").className = "err";
       $("f-err").textContent = "Gagal menghantar. Sila cuba lagi.";
     });
@@ -930,6 +948,7 @@ body.sh .sheet{transform:none;visibility:visible}
   });
 
   // keep the copy in sync with the selected channel
+  var RSVP_LABEL = "Hantar melalui WhatsApp";
   (function () {
     var label = "Hantar melalui WhatsApp", note = "Tiada akaun diperlukan — pesan akan dibuka dalam WhatsApp anda.";
     if (RSVP_CHANNEL === "sheet") {
@@ -939,7 +958,8 @@ body.sh .sheet{transform:none;visibility:visible}
       label = "Hantar RSVP";
       note = "Jawapan anda terus sampai kepada tuan rumah.";
     }
-    $("f-send").lastChild.textContent = label;
+    RSVP_LABEL = label;
+    $("f-send").textContent = label;
     $("f-note").textContent = note;
     document.querySelector(".sheet .sub").textContent = RSVP_CHANNEL === "whatsapp"
       ? "Jawapan anda akan dihantar terus kepada Azam melalui WhatsApp."
