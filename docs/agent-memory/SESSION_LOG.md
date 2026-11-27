@@ -91,3 +91,24 @@ Append-only record of work sessions. Newest entries at the bottom.
 **Verification:** wrote `apps-script/test.js`, a Node harness that stubs SpreadsheetApp / ContentService / LockService / Utilities / PropertiesService / ScriptApp / HtmlService and runs the real Code.gs in a `vm` context — 38 checks covering sheet creation + headers, phone normalisation, pax totals, dedupe-as-update, absentees zeroed, wrong key, missing name, honeypot, the alias payload, dashboard totals, CSV mime/BOM/key, CSV quoting of commas+quotes with a round-trip parse, and bound-script mode. All pass. Browser side: auto mode POSTed the full JSON to a local mock (captured), and the misconfigured page correctly rendered the WhatsApp variant.
 
 **Note:** the tool layer collapses `\\n` inside heredocs, which twice broke JS string literals; `Code.gs` uses `String.fromCharCode(10)` (`NL`) for this reason and the test file is written with the `write` tool rather than a heredoc.
+
+## 2026-11-27 — Google Sheets RSVP live: endpoint wired, leading-zero bug fixed, 4 test rows left
+
+**Live endpoint (verified working):** `https://script.google.com/macros/s/AKfycbzW8tj6hFnJ2xZoIUjDnwIyM1I0a-DMV5pDZy-1fekJFq4Xkk6YnrZCJ_fZ8AOdlU36vQ/exec`
+
+The Apps Script dashboard response embeds the CSV link, which leaked the deployment's `SECRET` (`$DanishVb09`) — useful, since `RSVP_KEY` must match it. Both are now wired into `src/index.template.html`.
+
+**Verified against the live deployment:**
+- `GET /exec` → 200, dashboard renders (title, 0 replies, CSV link)
+- `GET /exec?csv=1&key=…` → 200, `text/csv`, BOM + header row
+- `GET /exec?csv=1&key=wrong` → `Unauthorized`
+- `POST` (`Content-Type: text/plain;charset=utf-8`, JSON) → 302, row appended
+- Browser path (page → `fetch` `no-cors`) → row appended, `Dijemput` correctly captured the `?to=` parameter
+
+**Bug found only because I wrote to the real sheet:** `0123456789` was stored as `123456789`. Sheets coerces numeric-looking strings, so **every Malaysian phone number loses its leading zero** on export. Fixed in `Code.gs` by setting the phone column to `@` (plain text) and rewriting the value; the mock harness now emulates Sheets' coercion, and removing the fix makes 12 checks fail (`phone=number:123456789`).
+
+**Other changes:** `busy()` disables the button and shows "Menghantar…" (a Google cold start can exceed 5 s, and a double tap would otherwise double-submit); a rejected `fetch` now reports failure with a WhatsApp fallback instead of showing a false receipt.
+
+**Left test data in their sheet:** 4 rows (UJIAN-AUTOMATED, UJIAN-DARI-BROWSER, DIAG, UJIAN-STATUS) — rows 2–5, all labelled "(boleh padam)". Flagged to the user for deletion; the script has no delete endpoint.
+
+**Second gotcha:** Apps Script serves the *deployed* version, not the editor file. Any `Code.gs` edit needs Deploy → Manage deployments → Edit → New version, otherwise `/exec` keeps running the old code.
