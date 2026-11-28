@@ -225,11 +225,15 @@ section{position:relative;padding:22px 0}
 
 /* reveal on scroll — the card's motion is a soft fade, nothing bouncy */
 .rv{
-  opacity:0;transform:translate3d(0,10px,0);
-  transition:opacity .48s cubic-bezier(.22,.7,.24,1),transform .48s cubic-bezier(.22,.7,.24,1);
+  opacity:0;transform:translate3d(0,16px,0);
+  transition:opacity .34s ease,transform .34s cubic-bezier(.3,.7,.3,1);
   transition-delay:calc(var(--i,0) * 45ms);
 }
-.rv.in{opacity:1;transform:none}
+.rv.in{
+  opacity:1;transform:none;
+  transition-duration:.62s;
+  transition-timing-function:cubic-bezier(.22,.7,.24,1);
+}
 
 /* ---------- scalloped cream sheet (cover + the card interior) ---------- */
 .sheetwrap{position:relative;isolation:isolate}
@@ -726,74 +730,88 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
     <div class="wrap">
       <div class="sheetwrap">
         <div class="sheet">
-          <p class="greet rv" style="--i:0">Assalamualaikum wbt &amp;<br>Salam Sejahtera</p>
 
-          <p class="hosts rv" style="--i:1">
-            Suhaimi Bin Shaari
-            <span class="amp">&amp;</span>
-            Siti Ma'rifatul Azizah
-          </p>
+          <!-- section 1 · greeting, hosts, the invitation line -->
+          <div class="rv" data-sec="1">
+            <p class="greet">Assalamualaikum wbt &amp;<br>Salam Sejahtera</p>
 
-          <p class="invite-line rv" style="--i:2">dengan segala hormatnya menjemput</p>
+            <p class="hosts">
+                        Suhaimi Bin Shaari
+                        <span class="amp">&amp;</span>
+                        Siti Ma'rifatul Azizah
+                      </p>
 
-          <div class="addressee rv" style="--i:3">
-            <p class="guest-line">Dato’/Datin/Tuan/Puan/Encik/Cik</p>
-            <div class="rule" aria-hidden="true"></div>
+            <p class="invite-line">dengan segala hormatnya menjemput</p>
+
+            <div class="addressee">
+                        <p class="guest-line">Dato’/Datin/Tuan/Puan/Encik/Cik</p>
+                        <div class="rule" aria-hidden="true"></div>
+                      </div>
+
+            <p class="hadir">hadir ke majlis perkahwinan puteri kami yang dikasihi,</p>
           </div>
 
-          <p class="hadir rv" style="--i:3">hadir ke majlis perkahwinan puteri kami yang dikasihi,</p>
+          <!-- section 2 · the couple -->
+          <div class="rv" data-sec="2">
+            <div class="couple">
+                        <p class="cname">Imas Nazifatuz Zahro<br>Binti Suhaimi</p>
+                        <p class="and">dengan pasangannya</p>
+                        <p class="cname">Muhammad Azam Muddin<br>Bin Ishak</p>
+                      </div>
 
-          <div class="couple">
-            <p class="cname rv" style="--i:4">Imas Nazifatuz Zahro<br>Binti Suhaimi</p>
-            <p class="and rv" style="--i:5">dengan pasangannya</p>
-            <p class="cname rv" style="--i:6">Muhammad Azam Muddin<br>Bin Ishak</p>
+            <div class="flourish" aria-hidden="true"></div>
           </div>
 
-          <div class="flourish rv" style="--i:7" aria-hidden="true"></div>
+          <!-- section 3 · date, masa, tempat, maps / calendar -->
+          <div class="rv" data-sec="3">
+            <div class="when">
+                        <div class="date">
+                          <span class="dow">SABTU</span>
+                          <span class="dnum">26</span>
+                          <span class="dmy"><span>Disember</span><span>2026</span></span>
+                        </div>
 
-          <div class="when">
-            <div class="date rv" style="--i:8">
-              <span class="dow">SABTU</span>
-              <span class="dnum">26</span>
-              <span class="dmy"><span>Disember</span><span>2026</span></span>
-            </div>
+                        <dl class="facts">
+                          <div class="fact">
+                            <dt>Masa</dt>
+                            <dd>11:00 pagi – 4:00 petang</dd>
+                          </div>
+                          <div class="fact">
+                            <dt>Tempat</dt>
+                            <dd class="addr">Masjid Prima Saujana<br>43000 Kajang, Selangor</dd>
+                          </div>
+                        </dl>
 
-            <dl class="facts rv" style="--i:9">
-              <div class="fact">
-                <dt>Masa</dt>
-                <dd>11:00 pagi – 4:00 petang</dd>
-              </div>
-              <div class="fact">
-                <dt>Tempat</dt>
-                <dd class="addr">Masjid Prima Saujana<br>43000 Kajang, Selangor</dd>
-              </div>
-            </dl>
-
-            <div class="btns rv" style="--i:10">
-              <a class="btn sm" target="_blank" rel="noopener"
-                 href="https://www.google.com/maps/search/?api=1&amp;query=Masjid+Prima+Saujana+Kajang">
-                <svg viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg>
-                Maps</a>
-              <a class="btn sm" target="_blank" rel="noopener"
-                 href="https://waze.com/ul?q=Masjid%20Prima%20Saujana%20Kajang&amp;navigate=yes">
-                <svg viewBox="0 0 24 24"><path d="M12 3 4 20l8-4 8 4-8-17Z"/></svg>
-                Waze</a>
-              <a class="btn sm wide" target="_blank" rel="noopener"
-                 href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Walimatul%20Urus%20Imas%20%26%20Azam&amp;dates=20261226T030000Z/20261226T080000Z&amp;ctz=Asia/Kuala_Lumpur&amp;location=Masjid%20Prima%20Saujana%2C%20Kajang&amp;details=Walimatul%20Urus%20Imas%20%26%20Azam%20%E2%80%94%2026%20Disember%202026%2C%20Masjid%20Prima%20Saujana%2C%20Kajang.">
-                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
-                Simpan Tarikh</a>
-            </div>
+                        <div class="btns">
+                          <a class="btn sm" target="_blank" rel="noopener"
+                             href="https://www.google.com/maps/search/?api=1&amp;query=Masjid+Prima+Saujana+Kajang">
+                            <svg viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg>
+                            Maps</a>
+                          <a class="btn sm" target="_blank" rel="noopener"
+                             href="https://waze.com/ul?q=Masjid%20Prima%20Saujana%20Kajang&amp;navigate=yes">
+                            <svg viewBox="0 0 24 24"><path d="M12 3 4 20l8-4 8 4-8-17Z"/></svg>
+                            Waze</a>
+                          <a class="btn sm wide" target="_blank" rel="noopener"
+                             href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Walimatul%20Urus%20Imas%20%26%20Azam&amp;dates=20261226T030000Z/20261226T080000Z&amp;ctz=Asia/Kuala_Lumpur&amp;location=Masjid%20Prima%20Saujana%2C%20Kajang&amp;details=Walimatul%20Urus%20Imas%20%26%20Azam%20%E2%80%94%2026%20Disember%202026%2C%20Masjid%20Prima%20Saujana%2C%20Kajang.">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+                            Simpan Tarikh</a>
+                        </div>
+                      </div>
           </div>
 
-          <div class="hubungi rv" style="--i:11">
-            <p class="label">Untuk Dihubungi</p>
-            <ul>
-              <li><a href="https://wa.me/60123593562" target="_blank" rel="noopener"><span class="num">012 359 3562</span><span class="who">Suhaimi (Ayah)</span></a></li>
-              <li><a href="https://wa.me/60122843175" target="_blank" rel="noopener"><span class="num">012 284 3175</span><span class="who">Azizah (Ibu)</span></a></li>
-              <li><a href="https://wa.me/60172130509" target="_blank" rel="noopener"><span class="num">017 213 0509</span><span class="who">Imdad (Adik)</span></a></li>
-              <li><a href="https://wa.me/601126643289" target="_blank" rel="noopener"><span class="num">011 2664 3289</span><span class="who">Sara (Adik)</span></a></li>
-            </ul>
+          <!-- section 4 · who to contact -->
+          <div class="rv" data-sec="4">
+            <div class="hubungi">
+                        <p class="label">Untuk Dihubungi</p>
+                        <ul>
+                          <li><a href="https://wa.me/60123593562" target="_blank" rel="noopener"><span class="num">012 359 3562</span><span class="who">Suhaimi (Ayah)</span></a></li>
+                          <li><a href="https://wa.me/60122843175" target="_blank" rel="noopener"><span class="num">012 284 3175</span><span class="who">Azizah (Ibu)</span></a></li>
+                          <li><a href="https://wa.me/60172130509" target="_blank" rel="noopener"><span class="num">017 213 0509</span><span class="who">Imdad (Adik)</span></a></li>
+                          <li><a href="https://wa.me/601126643289" target="_blank" rel="noopener"><span class="num">011 2664 3289</span><span class="who">Sara (Adik)</span></a></li>
+                        </ul>
+                      </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -802,7 +820,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
   <!-- ============================ 2 · countdown ============================ -->
   <section aria-labelledby="cd-label">
     <div class="wrap">
-      <div class="card rv" style="--i:0">
+      <div class="card rv">
         <p class="eyebrow" id="cd-label">Menjelang Hari Bahagia</p>
         <div class="count" id="count">
           <div><b id="cd-d">00</b><span>Hari</span></div>
@@ -820,7 +838,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
   <!-- ============================ 3 · gift list ============================ -->
   <section id="hadiah">
     <div class="wrap">
-      <div class="card rv" style="--i:0">
+      <div class="card rv">
         <p class="eyebrow">Hadiah Perkahwinan</p>
         <h2 class="h2">Senarai Hadiah</h2>
         <p class="copy" style="margin-top:14px">
@@ -829,7 +847,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
           di dalam Google Sheet — tandakan barang yang ingin dibeli supaya tiada
           hadiah yang berulang.
         </p>
-        <ul class="gift-cats rv" style="--i:1">
+        <ul class="gift-cats">
           <li>Peralatan masak</li>
           <li>Perkakas dapur</li>
           <li>Sinki &amp; rak</li>
@@ -839,7 +857,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
           <li>Bilik tidur &amp; solat</li>
           <li>Hadiah fleksibel</li>
         </ul>
-        <div class="btns rv" style="--i:2">
+        <div class="btns">
           <a class="btn fill wide" target="_blank" rel="noopener"
              href="https://docs.google.com/spreadsheets/d/1VxoHAGpd_y6fGH3YPTAJIpBUNGNbNLHegU3TtRdWJM0/edit?usp=sharing">
             <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
@@ -855,14 +873,14 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
   <!-- ============================ 4 · RSVP ============================ -->
   <section id="rsvp">
     <div class="wrap">
-      <div class="card rv" style="--i:0">
+      <div class="card rv">
         <p class="eyebrow">Kehadiran</p>
         <h2 class="h2">RSVP</h2>
         <p class="copy" style="margin-top:14px">
           Sila maklumkan kehadiran tuan/puan sebelum <em>Sabtu, 19 Disember 2026</em>
           supaya kami dapat merancang jamuan dengan lebih baik.
         </p>
-        <div class="btns rv" style="--i:1">
+        <div class="btns">
           <button class="btn fill wide" type="button" data-open>
             <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="m4 6 8 6 8-6"/></svg>
             Maklumkan Kehadiran</button>
@@ -874,7 +892,7 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
   <!-- ============================ 5 · guestbook ============================ -->
   <section id="tetamu">
     <div class="wrap">
-      <div class="card rv" style="--i:0">
+      <div class="card rv">
         <div class="gb-head">
           <p class="eyebrow">Buku Tetamu</p>
           <h2 class="h2">Sign Our Guestbook</h2>
@@ -1254,21 +1272,58 @@ body.sh .bar{transform:translate(-50%,160%);transition-delay:0s}
      ============================================================ */
   var items = Array.prototype.slice.call(document.querySelectorAll(".rv"));
   var io = null;
+  var REVEAL_STEP = 430;                 // ms between one section and the next
+  var rvQueue = [], rvRunning = false;
 
-  function show(el) { el.classList.add("in"); if (io) io.unobserve(el); }
+  function show(el) { el.classList.add("in"); }
+  function hide(el) {
+    el.classList.remove("in");
+    if (el.__queued) { el.__queued = false; }
+  }
+
+  // Sections are revealed strictly in document order, one after another, even when
+  // several of them are in the viewport at the same time (a tall phone, or a fast
+  // scroll). That is what makes them arrive 1, 2, 3, 4 ... instead of all at once.
+  function requestReveal(el) {
+    if (el.classList.contains("in") || el.__queued) return;
+    el.__queued = true;
+    rvQueue.push(el);
+    if (!rvRunning) runQueue();
+  }
+
+  function runQueue() {
+    if (!rvQueue.length) { rvRunning = false; return; }
+    rvRunning = true;
+    var el = rvQueue.shift();
+    el.__queued = false;
+    var r = el.getBoundingClientRect();
+    // a section that was passed during a fast/smooth scroll must not hold up the
+    // queue: skip it without spending a beat
+    if (r.bottom <= 0 || r.top >= window.innerHeight) { runQueue(); return; }
+    show(el);
+    window.setTimeout(runQueue, reduce ? 0 : REVEAL_STEP);
+  }
 
   function startReveal() {
     if ("IntersectionObserver" in window && !reduce) {
+      // like AOS with once:false - a section fades back out when it leaves through
+      // the bottom (i.e. while scrolling up), so the way down replays the
+      // invitation section by section. Sections that scrolled off the top keep
+      // their state: re-hiding them would flash the page on the way up.
       io = new IntersectionObserver(function (entries) {
+        var entering = [];
         entries.forEach(function (en) {
-          if (en.isIntersecting) show(en.target);
+          if (en.isIntersecting) entering.push(en.target);
+          else if (en.boundingClientRect.top > 0) hide(en.target);
         });
-      }, { rootMargin: "0px 0px 2% 0px", threshold: 0 });
+        entering.sort(function (a, b) { return items.indexOf(a) - items.indexOf(b); });
+        entering.forEach(requestReveal);
+      }, { rootMargin: "0px 0px -12% 0px", threshold: 0 });
       items.forEach(function (el) { io.observe(el); });
     }
     items.forEach(function (el) {
       var r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight * 0.94 && r.bottom > 0) show(el);
+      if (r.top < window.innerHeight * 0.94 && r.bottom > 0) requestReveal(el);
     });
   }
 

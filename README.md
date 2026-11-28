@@ -108,11 +108,19 @@ secondary typeface — and the guestbook messages use La Belle Aurore.
 * **RSVP** — the existing Google Sheet flow, restyled.
 * **Sign Our Guestbook** — wishes carousel + form (see §4).
 * **Bottom bar** — `RSVP · Hadiah · Lagu` (music toggle; label flips to `Senyap` while playing).
-* **Scroll reveal** — opacity + 10 px lift only (no animated `blur`, no `backdrop-filter` on the
-  fixed bar), fires once per element, 45 ms stagger, triggered just before entry so nothing
-  pops at the bottom edge. The scalloped card's shadow is a static blurred shape instead of a
-  `drop-shadow` that would re-rasterise on every reveal, and the petals are removed ~7 s after
-  the opening so 13 animated nodes never ride along with the scroll.
+* **Scroll reveal, both ways, in nine sections** — the invitation is one reveal unit per section:
+  (1) greeting → *hadir ke majlis…*, (2) the couple, (3) date → Simpan Tarikh, (4) Untuk Dihubungi,
+  (5) countdown, (6) Senarai Hadiah, (7) RSVP, (8) Sign Our Guestbook, (9) the closing card.
+  They arrive **strictly one at a time, in order** — a queue reveals section 1, then 2, then 3 …
+  at 430 ms apart even when several are in view at once (a tall phone, or a fast scroll), so it
+  always reads 1-2-3-4-5-6-7-8-9. Each section fades in as it enters (opacity + 16 px lift,
+  0.62 s) and **fades back out when it leaves through the bottom**,
+  so scrolling down replays the invitation section by section exactly like the reference
+  (mymawaddah.com). Blocks that have scrolled off the top keep their state — re-hiding read
+  content would flash the page on the way up. Exits run faster (0.34 s) than entrances. No
+  animated `blur`, no `backdrop-filter` on the fixed bar, the scalloped card's shadow is a static
+  blurred shape, and the petals are removed ~7 s after the opening so nothing animated rides
+  along with the scroll.
 * **Personal greeting** — `index.html?to=Encik%20Ahmad` adds `KEPADA / Encik Ahmad` to the cover
   and records who was invited in the sheet.
 * **Closing block** sits on a cream card, not on the toile — the thanks and the share button

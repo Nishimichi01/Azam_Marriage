@@ -410,3 +410,54 @@ Prototype only — `index.html` and `src/` untouched.
 - `node --check` clean; `index.html` (472 KB) and `dist/` in sync.
 
 **Note:** still page-only — no Apps Script change; the client only needs to republish the site.
+
+## 2026-11-28 — Scroll reveal is now bidirectional, matching the AOS once:false reference
+
+**Asked:** the section reveal should behave like the reference `https://mymawaddah.com/e/bvgZZHCE` — blocks appear one by one when scrolling down, and fade out again when scrolling back up.
+
+**What the reference actually does:** it ships **AOS** with `once:false` (`data-aos="zoom-in-up"`, `data-aos-delay` 0/200/400…1200, 2.3 s). Measured: elements above the viewport keep `aos-animate` (read content is not re-hidden), while elements leaving **through the bottom** lose it and re-animate on the next pass. That asymmetry is what makes scrolling down replay the invitation.
+
+**Changes** (`src/index.template.html`, page only)
+- `.rv` now fades in over **0.62 s** (16 px lift, 45 ms per `--i` stagger) and fades out over **0.34 s** — `transition-duration` differs between the base and `.in` state, so exits are quicker than entrances.
+- The observer no longer unobserves: it adds `.in` when intersecting and removes it **only when the block leaves through the bottom** (`en.boundingClientRect.top > 0`), with `rootMargin: "0px 0px -12% 0px"` so the swap happens while the block is still partly on screen. Blocks above the viewport are left alone.
+- `hide()` added; `show()` no longer detaches the observer.
+
+**Verification** (390×844, real page)
+- Scrolling down: revealed blocks went 10 → 17 → 20 of 21 as the page moved 0 → 1200 → 1800.
+- Scrolling back up to 900: all **6** blocks below the viewport had lost `.in` (`stillIn: 0`), i.e. they fade out and will re-animate on the way down.
+- No JS errors; `node --check` clean; `index.html` (473 KB) and `dist/` in sync.
+
+**Note:** still page-only — republish `index.html` to deploy.
+
+## 2026-11-28 — Reveal grouped into the nine requested sections
+
+**Asked:** group the reveal by nine named sections so the pop-in / fade-out happens per section instead of per text block.
+
+**Changes** (`src/index.template.html`, page only)
+- Hero sheet regrouped into four `.rv` wrappers with `data-sec="1..4"`: greeting → hosts → invite line → addressee/rule → *hadir ke majlis…* (1); the couple + flourish (2); the `when` block — date, MASA, TEMPAT, Maps/Waze/Simpan Tarikh (3); `.hubungi` (4).
+- Removed every nested `.rv` (couple names, date parts, facts, gift categories, gift/RSVP buttons) and the now-pointless `--i` styles, and dropped `.rv` from the countdown eyebrow. Sections 5-9 were already single cards: countdown, Senarai Hadiah, RSVP, Sign Our Guestbook, closing card.
+- Result: exactly **9** `.rv` units in the DOM (verified 726/746/757/794 = hero 1-4, 814 countdown, 832 gift, 867 RSVP, 886 guestbook, 923 footer), with heights 309/224/388/224/154/471/254/678/324.
+
+**Verification** (390×844)
+- Scroll 0: units 1-3 in, 4-9 out. Scroll 1400: 1-7 in, 8-9 out. Scroll 2600: all 9 in.
+- Scroll back up to 1200: units 7-9 lose `.in` (they are below the viewport) while 5-6 stay in, so sections fade out as they leave through the bottom and re-animate on the way down.
+- No JS errors, `node --check` clean, `index.html` (473 KB) and `dist/` in sync.
+
+**Note:** page-only; republish `index.html`. Section 3 is the tallest hero unit (388 px) so it still fits one screen on a phone.
+
+## 2026-11-28 — Sections now reveal strictly one at a time in order
+
+**Asked:** sections should reveal strictly one by one — 1, 2, 3, 4 … 9 — instead of several appearing together when more than one is in the viewport.
+
+**Changes** (`src/index.template.html`, page only)
+- Reveal is now a FIFO queue: `requestReveal(el)` pushes, `runQueue()` pops one section every `REVEAL_STEP = 430 ms`. The IntersectionObserver sorts entering entries by `items.indexOf(el)` so the order is always document order, whatever order the entries arrive in.
+- A queued section that the scroll has already passed (`bottom <= 0`) or that is still far below (`top >= innerHeight`) is skipped **without spending a beat**, so a smooth-scroll jump doesn't stall the cascade for seconds (measured before the fix: 8 appeared 2 s late because 5-7 each burned a slot while off screen).
+- Hidden sections are dequeued (`hide()` clears `__queued`), so scrolling up cancels pending reveals.
+
+**Verification** (390×844)
+- On open (three sections in view at once): 1 at 645 ms, 2 at 1105 ms, 3 at 1577 ms — one at a time, in order.
+- After a jump to y=2600: 4 at 318 ms, 8 at 627 ms, 9 at 1096 ms — 430 ms apart, no gaps.
+- Scrolling back up to 1500 leaves 8 and 9 without `.in` (they faded out through the bottom) while 1-7 stay.
+- `node --check` clean; `index.html` (474 KB) and `dist/` in sync.
+
+**Note:** page-only — republish `index.html`. Long gaps (e.g. section 4 → 8) are simply sections that are not in view; each visible section takes its turn.
